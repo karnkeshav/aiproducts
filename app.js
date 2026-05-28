@@ -131,7 +131,7 @@ footer strong{color:#fff;}
 })();
 
 // ── Data ──────────────────────────────────────────────────────────────────────
-const WA = '91XXXXXXXXXX';
+const WA = '917680973409';
 const waLink = (msg) => `https://wa.me/${WA}?text=${encodeURIComponent(msg)}`;
 
 const navLinks = [
@@ -366,7 +366,7 @@ function buildPage() {
 
   // Footer
   const footer = el('footer', {});
-  footer.innerHTML = '<strong>AI-Powered Tools</strong> · Built by a non-coder with 22 years in IT<br/>TechMahindra · Wipro · IBM · Kyndryl · PwC<br/><br/><span style="font-size:11px;">All products are real, tested, and working. Every one was built solo using AI.</span><br/><span style="font-size:11px;margin-top:4px;display:block;">Replace <strong style="color:#f09060;">91XXXXXXXXXX</strong> with your WhatsApp number before publishing.</span>';
+  footer.innerHTML = '<strong>AI-Powered Tools</strong> · Built by a non-coder with 22 years in IT<br/>TechMahindra · Wipro · IBM · Kyndryl · PwC<br/><br/><span style="font-size:11px;">All products are real, tested, and working. Every one was built solo using AI.</span><br/><span style="font-size:11px;margin-top:4px;display:block;">Replace <strong style="color:#f09060;">917680973409</strong> with your WhatsApp number before publishing.</span>';
   body.appendChild(footer);
 }
 
