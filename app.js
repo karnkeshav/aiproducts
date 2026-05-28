@@ -15,9 +15,7 @@ const WA_NUMBER      = '917680973409';                 // your WhatsApp number
   fonts.href = 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap';
   document.head.appendChild(fonts);
 
-  const qrScript = document.createElement('script');
-  qrScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-  document.head.appendChild(qrScript);
+
 })();
 
 // ── CSS ───────────────────────────────────────────────────────────────────────
@@ -623,24 +621,6 @@ function buildPage() {
   r4lCards.appendChild(r4l);
   body.appendChild(r4lCards);
 
-  // QR section
-  const qrSec = el('div', { class: 'qr-section', id: 'qr-gen' });
-  qrSec.appendChild(el('h3', {}, '📲 Generate Your QR Code'));
-  qrSec.appendChild(el('p', {}, 'Once you\'ve hosted this page, paste the URL below to generate the QR code for your printout, banner, or visiting card.'));
-  const qrRow  = el('div', { class: 'qr-input-row' });
-  const qrInp  = el('input', { class: 'qr-input', type: 'url', id: 'qr-url', placeholder: 'https://your-hosted-url.com' });
-  const qrBtn  = el('button', { class: 'btn-gen' }, 'Generate QR');
-  qrBtn.addEventListener('click', generateQR);
-  qrRow.appendChild(qrInp); qrRow.appendChild(qrBtn);
-  qrSec.appendChild(qrRow);
-  const qrOut  = el('div', { id: 'qr-output' });
-  qrOut.appendChild(el('div', { id: 'qr-canvas' }));
-  qrOut.appendChild(el('p', {}, 'Scan to open your product catalogue'));
-  const dlBtn  = el('button', { class: 'btn-dl' }, '⬇ Download QR Code');
-  dlBtn.addEventListener('click', downloadQR);
-  qrOut.appendChild(dlBtn);
-  qrSec.appendChild(qrOut);
-  body.appendChild(qrSec);
 
   // Footer
   const footer = el('footer', {});
@@ -655,24 +635,7 @@ function buildPage() {
   buildModal();
 }
 
-// ── QR logic ──────────────────────────────────────────────────────────────────
-function generateQR() {
-  const url = document.getElementById('qr-url').value.trim();
-  if (!url) { alert('Please enter a URL first.'); return; }
-  const container = document.getElementById('qr-canvas');
-  container.innerHTML = '';
-  new QRCode(container, { text: url, width: 200, height: 200, colorDark: '#0f1117', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
-  document.getElementById('qr-output').style.display = 'block';
-}
 
-function downloadQR() {
-  const canvas = document.querySelector('#qr-canvas canvas');
-  if (!canvas) { alert('Generate a QR code first.'); return; }
-  const link = document.createElement('a');
-  link.download = 'product-catalogue-qr.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
-}
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 buildPage();
