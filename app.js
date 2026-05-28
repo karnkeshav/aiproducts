@@ -4,8 +4,8 @@
 // =============================================================================
 
 // ── CONFIG — replace these two values before publishing ───────────────────────
-const SHEET_ENDPOINT = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // see setup-guide.html
-const WA_NUMBER      = '91XXXXXXXXXX';                 // your WhatsApp number
+const SHEET_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyyjC1zYHXdSJy_Ltef5JA31JpwjNhSdiM-7G97fG5QOGWK9_Nv6i9uTzccJh1TobLEwA/exec'; // see setup-guide.html
+const WA_NUMBER      = '917680973409';                 // your WhatsApp number
 // =============================================================================
 
 // ── External resources ────────────────────────────────────────────────────────
