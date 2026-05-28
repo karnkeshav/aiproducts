@@ -261,7 +261,7 @@ const products = [
     name: 'Ready4Exam Portal',
     desc: 'A full exam-readiness platform built for students who can\'t afford to miss class. Free modules available. Paid tiers with deeper features. No customisation needed — just use it.',
     meta: '✓ Free modules available · ✓ Paid tiers on the website · Schools: let\'s discuss deployment',
-    extraBtn: { cls: 'btn-link', label: '🌐 Visit Portal', href: '#' },
+    extraBtn: { cls: 'btn-link', label: '🌐 Visit Portal', href: 'https://ready4exam.in' },
     schoolsBtn: true,
   },
   {
