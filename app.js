@@ -1399,7 +1399,12 @@ function openRazorpay() {
 // ── Google Sheets save (workshop) ─────────────────────────────────────────────
 function saveToSheets(data) {
   if (!SHEET_URL) { console.warn('SHEET_URL not set'); return Promise.resolve(); }
-  return fetch(SHEET_URL + '?' + new URLSearchParams(data), { mode:'no-cors' });
+  return fetch(SHEET_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
 }
 
 // ── GitHub CSV save ───────────────────────────────────────────────────────────
