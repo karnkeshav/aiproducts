@@ -1,677 +1,1477 @@
-// =============================================================================
-//  AI Products Catalogue — app.js
-//  All CSS, HTML, and logic lives here. index.html is a bare shell.
-// =============================================================================
+// ═══════════════════════════════════════════════════════════════════════════════
+//  AI for EveryOne — app.js
+//  One file · All CSS · All content · All logic
+//  Workshop registration  +  AI Products catalogue
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// ── CONFIG — replace these two values before publishing ───────────────────────
-const SHEET_ENDPOINT = 'YOUR_GOOGLE_APPS_SCRIPT_URL'; // see setup-guide.html
-const WA_NUMBER      = '91XXXXXXXXXX';                 // your WhatsApp number
-// =============================================================================
+// ── Config ──────────────────────────────────────────────────────────────────
+var CFG       = window.APP_CONFIG || {};
+var SHEET_URL = CFG.GOOGLE_SHEET_URL || '';   // workshop → Google Sheets
+var RAZOR_KEY = CFG.RAZORPAY_KEY_ID  || '';   // Razorpay publishable key
+var GH_TOKEN  = CFG.GITHUB_TOKEN     || '';   // GitHub PAT for CSV backup
+var GH_REPO   = CFG.GITHUB_REPO      || 'karnkeshav/aiproducts';
+var LEADS_URL = CFG.LEADS_SHEET_URL  || 'YOUR_LEADS_SCRIPT_URL'; // product leads
 
-// ── External resources ────────────────────────────────────────────────────────
-(function loadExternalResources() {
-  const fonts = document.createElement('link');
-  fonts.rel  = 'stylesheet';
-  fonts.href = 'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,700;1,400&display=swap';
-  document.head.appendChild(fonts);
-
-  const qrScript = document.createElement('script');
-  qrScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-  document.head.appendChild(qrScript);
+// ── External resources ───────────────────────────────────────────────────────
+(function () {
+  var h = document.head;
+  function tag(t, a) { var e = document.createElement(t); Object.assign(e, a); h.appendChild(e); }
+  tag('link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' });
+  tag('link', {
+    rel: 'stylesheet',
+    href: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,700;0,800;1,600&display=swap',
+  });
+  tag('script', { src: 'https://checkout.razorpay.com/v1/checkout.js' });
+  tag('script', { src: 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js' });
 })();
 
-// ── CSS ───────────────────────────────────────────────────────────────────────
-(function injectStyles() {
-  const css = `
-*{box-sizing:border-box;margin:0;padding:0;}
+// ── CSS ──────────────────────────────────────────────────────────────────────
+(function () {
+var css = `
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --ink:#0f1117;--ink2:#3a3d4a;--muted:#7a7f94;
-  --surface:#ffffff;--bg:#f5f4f0;--accent:#e85d26;
-  --accent2:#1a56db;--gold:#c9a84c;
-  --radius:14px;--card-shadow:0 2px 12px rgba(0,0,0,0.07);
+  --bg:#06060f; --s1:#0d0d1a; --s2:#131325; --s3:#1a1a30;
+  --b1:rgba(255,255,255,0.07); --b2:rgba(255,255,255,0.13);
+  --text:#f1f5f9; --muted:#94a3b8; --dim:#64748b;
+  --blue:#3b82f6; --indigo:#6366f1; --purple:#8b5cf6;
+  --teal:#10b981; --orange:#f97316; --amber:#f59e0b; --red:#ef4444;
+  --ws-grad:linear-gradient(135deg,#6366f1,#3b82f6);
+  --tools-grad:linear-gradient(135deg,#f97316,#f59e0b);
+  --r:16px; --r-sm:10px; --r-xl:24px;
 }
 html{scroll-behavior:smooth;}
-body{background:var(--bg);font-family:'Outfit',sans-serif;color:var(--ink);min-height:100vh;font-size:15px;}
-
-/* HERO */
-.hero{background:var(--ink);color:#fff;padding:3rem 1.5rem 2.5rem;text-align:center;position:relative;overflow:hidden;}
-.hero::before{content:'';position:absolute;top:-60px;right:-60px;width:220px;height:220px;border-radius:50%;background:rgba(232,93,38,0.12);pointer-events:none;}
-.hero::after{content:'';position:absolute;bottom:-80px;left:-40px;width:260px;height:260px;border-radius:50%;background:rgba(26,86,219,0.08);pointer-events:none;}
-.hero-badge{display:inline-block;background:rgba(232,93,38,0.18);color:#f09060;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;border-radius:20px;padding:5px 14px;margin-bottom:1.1rem;}
-.hero h1{font-family:'Playfair Display',serif;font-size:2.1rem;font-weight:700;line-height:1.2;margin-bottom:0.7rem;}
-.hero h1 em{font-style:italic;color:#f09060;}
-.hero p{font-size:14px;color:rgba(255,255,255,0.65);max-width:340px;margin:0 auto 1.5rem;line-height:1.6;}
-.hero-note{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:7px 16px;font-size:12.5px;color:rgba(255,255,255,0.75);}
-.hero-note span{width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;animation:pulse 2s infinite;}
-@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
-
-/* NAV STRIP */
-.strip{background:#fff;border-bottom:1px solid #e8e6e0;padding:0.6rem 1rem;display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
-.strip::-webkit-scrollbar{display:none;}
-.strip a{white-space:nowrap;font-size:12px;color:var(--muted);text-decoration:none;padding:5px 12px;border-radius:20px;border:1px solid #e0ddd6;transition:all 0.15s;}
-.strip a:hover{background:var(--ink);color:#fff;border-color:var(--ink);}
-
-/* SECTION */
-.section{padding:2rem 1rem 0;}
-.section-label{font-size:10.5px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);margin-bottom:0.5rem;}
-.section-title{font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:700;margin-bottom:0.3rem;}
-.section-sub{font-size:13px;color:var(--muted);margin-bottom:1.25rem;line-height:1.5;}
-
-/* CARDS */
-.cards{display:flex;flex-direction:column;gap:12px;padding:0 1rem 1.5rem;}
-.card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--card-shadow);padding:1.25rem 1.25rem 1rem;border:1px solid #ece9e2;position:relative;overflow:hidden;}
-.card.featured{background:var(--ink);color:#fff;border-color:transparent;}
-.card.featured .card-name,.card.featured .card-desc{color:#fff;}
-.card.featured .card-meta{color:rgba(255,255,255,0.55);}
-.card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:0.75rem;}
-.card-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
-.card.featured .card-icon{background:rgba(255,255,255,0.12);}
-.badge{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;border-radius:20px;padding:3px 10px;font-weight:600;white-space:nowrap;}
-.badge.live{background:#dcfce7;color:#15803d;}
-.badge.custom{background:#fef3c7;color:#92400e;}
-.badge.hot{background:var(--accent);color:#fff;}
-.badge.preorder{background:linear-gradient(135deg,#e85d26,#c9a84c);color:#fff;animation:shimmer 2.5s infinite;}
-@keyframes shimmer{0%,100%{opacity:1;}50%{opacity:0.8;}}
-.card-num{font-size:11px;color:var(--muted);font-weight:500;margin-bottom:3px;}
-.card-name{font-size:1.05rem;font-weight:600;margin-bottom:0.4rem;line-height:1.25;}
-.card-desc{font-size:13px;color:var(--ink2);line-height:1.55;margin-bottom:0.9rem;}
-.card-meta{font-size:11.5px;color:var(--muted);margin-bottom:0.85rem;line-height:1.5;}
-.card-actions{display:flex;gap:8px;flex-wrap:wrap;}
-.btn{display:inline-flex;align-items:center;gap:6px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;border-radius:8px;padding:9px 16px;text-decoration:none;cursor:pointer;border:none;transition:all 0.15s;}
-.btn-interest{background:var(--ink);color:#fff;}
-.btn-interest:hover{background:var(--accent);}
-.btn-link{background:#f0ede6;color:var(--ink);}
-.btn-link:hover{background:#e0ddd6;}
-.btn-preorder{background:linear-gradient(135deg,#e85d26,#c9a84c);color:#fff;width:100%;justify-content:center;padding:12px;font-size:14px;font-weight:600;}
-.btn-preorder:hover{opacity:0.92;}
-.dev-card{background:var(--ink2);color:#fff;border-color:transparent;}
-.dev-card .card-name,.dev-card .card-desc{color:#fff;}
-.dev-card .card-meta{color:rgba(255,255,255,0.55);}
-
-/* READY4LAUNCH PRICING */
-.featured-price{text-align:center;padding:1rem 0 0.5rem;}
-.price-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:4px;}
-.price-main{font-size:2rem;font-weight:700;color:#f09060;}
-.price-label{font-size:12px;color:rgba(255,255,255,0.55);}
-.price-old{font-size:13px;color:rgba(255,255,255,0.4);text-decoration:line-through;}
-.price-saving{font-size:11px;background:rgba(74,222,128,0.2);color:#4ade80;border-radius:20px;padding:3px 10px;display:inline-block;margin-bottom:0.75rem;}
-.pilot-steps{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0.75rem 0;}
-.pilot-step{background:rgba(255,255,255,0.07);border-radius:8px;padding:0.65rem 0.85rem;text-align:center;}
-.pilot-step .ps-num{font-size:1.2rem;font-weight:700;color:#f09060;}
-.pilot-step .ps-label{font-size:11px;color:rgba(255,255,255,0.55);margin-top:2px;}
-
-/* HOW IT WORKS STEPS */
-.steps-bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:0 1rem 2rem;background:#fff;border-radius:var(--radius);border:1px solid #ece9e2;padding:1.25rem;}
-.step{text-align:center;}
-.step-num{width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;}
-.step-text{font-size:11.5px;color:var(--muted);line-height:1.4;}
-
-/* DIVIDER */
-.divider{height:1px;background:#e8e5de;margin:0 1rem;}
-
-/* QR SECTION */
-.qr-section{margin:2rem 1rem;background:#fff;border-radius:var(--radius);box-shadow:var(--card-shadow);border:1px solid #ece9e2;padding:1.5rem;}
-.qr-section h3{font-family:'Playfair Display',serif;font-size:1.15rem;margin-bottom:0.4rem;}
-.qr-section p{font-size:13px;color:var(--muted);margin-bottom:1rem;line-height:1.5;}
-.qr-input-row{display:flex;gap:8px;flex-wrap:wrap;}
-.qr-input{flex:1;min-width:0;padding:10px 12px;border:1px solid #ddd;border-radius:8px;font-family:'Outfit',sans-serif;font-size:13px;color:var(--ink);}
-.qr-input:focus{outline:none;border-color:var(--accent);}
-.btn-gen{background:var(--ink);color:#fff;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;border:none;border-radius:8px;padding:10px 18px;cursor:pointer;white-space:nowrap;}
-.btn-gen:hover{background:var(--accent);}
-#qr-output{margin-top:1.25rem;text-align:center;display:none;}
-#qr-output canvas,#qr-output img{border-radius:8px;border:1px solid #ece9e2;}
-#qr-output p{font-size:12px;color:var(--muted);margin-top:8px;}
-.btn-dl{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:var(--ink);color:#fff;font-family:'Outfit',sans-serif;font-size:12px;padding:8px 16px;border-radius:8px;cursor:pointer;border:none;}
-.btn-dl:hover{background:var(--accent);}
-
-/* FOOTER */
-footer{background:var(--ink);color:rgba(255,255,255,0.5);text-align:center;padding:2rem 1rem;font-size:12px;line-height:1.8;}
-footer strong{color:#fff;}
-
-/* ── MODAL ─────────────────────────────────────────────────────────────────── */
-.modal-overlay{
-  display:none;position:fixed;inset:0;z-index:1000;
-  background:rgba(15,17,23,0.65);backdrop-filter:blur(4px);
-  align-items:center;justify-content:center;padding:1rem;
+body{
+  background:var(--bg);color:var(--text);
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  min-height:100vh;overflow-x:hidden;
 }
-.modal-overlay.open{display:flex;}
-.modal{
-  background:#fff;border-radius:18px;width:100%;max-width:420px;
-  box-shadow:0 20px 60px rgba(0,0,0,0.25);overflow:hidden;
-  animation:slideUp 0.22s ease;
+body.no-scroll{overflow:hidden;}
+img,svg{display:block;}
+button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
+
+/* ── SCROLL PROGRESS ── */
+#progress{position:fixed;top:0;left:0;height:2px;width:0%;
+  background:var(--ws-grad);z-index:9999;transition:width 0.1s linear;}
+
+/* ── STICKY NAV ── */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:500;
+  padding:12px 16px;display:flex;align-items:center;gap:12px;
+  background:rgba(6,6,15,0.8);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--b1);
+  transform:translateY(-100%);transition:transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  will-change:transform;
 }
-@keyframes slideUp{from{transform:translateY(24px);opacity:0;}to{transform:translateY(0);opacity:1;}}
-.modal-head{
-  background:var(--ink);padding:1.25rem 1.4rem 1.1rem;
-  display:flex;align-items:flex-start;justify-content:space-between;
+.nav.visible{transform:translateY(0);}
+.nav-brand{font-size:13px;font-weight:800;letter-spacing:-0.3px;flex:1;
+  background:var(--ws-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.nav-tabs{display:flex;gap:4px;}
+.nav-tab{font-size:12px;font-weight:600;color:var(--muted);background:none;border:none;
+  padding:6px 12px;border-radius:20px;cursor:pointer;transition:all 0.15s;}
+.nav-tab:hover,.nav-tab.active{background:var(--b2);color:var(--text);}
+.nav-cta{font-size:12px;font-weight:700;color:#fff;
+  background:var(--ws-grad);border:none;border-radius:20px;
+  padding:7px 14px;cursor:pointer;transition:opacity 0.15s;white-space:nowrap;}
+.nav-cta:hover{opacity:0.85;}
+
+/* ── HERO ── */
+.hero{
+  min-height:100svh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;
+  padding:80px 24px 72px;position:relative;overflow:hidden;
+  background:
+    radial-gradient(ellipse 90% 55% at 0% 40%,rgba(99,102,241,.18) 0%,transparent 60%),
+    radial-gradient(ellipse 70% 50% at 100% 20%,rgba(139,92,246,.14) 0%,transparent 55%),
+    radial-gradient(ellipse 80% 40% at 50% 110%,rgba(249,115,22,.1) 0%,transparent 50%),
+    var(--bg);
 }
-.modal-head-text{}
-.modal-product-tag{
-  font-size:10px;letter-spacing:0.15em;text-transform:uppercase;
-  color:rgba(255,255,255,0.45);margin-bottom:4px;
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);
+  color:#a5b4fc;font-size:11px;font-weight:700;letter-spacing:1.5px;
+  text-transform:uppercase;padding:6px 16px;border-radius:50px;margin-bottom:28px;
 }
-.modal-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:#fff;line-height:1.25;}
-.modal-close{
-  background:rgba(255,255,255,0.1);border:none;color:#fff;
-  width:30px;height:30px;border-radius:50%;cursor:pointer;
-  font-size:1rem;display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;margin-left:12px;margin-top:2px;transition:background 0.15s;
+.hero-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;
+  animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.hero h1{
+  font-family:'Playfair Display',Georgia,serif;
+  font-size:clamp(52px,15vw,88px);font-weight:800;line-height:1.02;
+  letter-spacing:-2px;margin-bottom:20px;
 }
-.modal-close:hover{background:rgba(255,255,255,0.2);}
-.modal-body{padding:1.4rem;}
-.form-row{margin-bottom:1rem;}
-.form-label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:5px;letter-spacing:0.02em;}
-.form-label span{color:var(--accent);}
-.form-input,.form-textarea{
-  width:100%;padding:10px 12px;
-  border:1.5px solid #e0ddd6;border-radius:9px;
-  font-family:'Outfit',sans-serif;font-size:13.5px;color:var(--ink);
-  background:#fafaf8;transition:border-color 0.15s,box-shadow 0.15s;
-  outline:none;
+.hero h1 .g1{background:var(--ws-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero h1 .g2{background:var(--tools-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hero-sub{font-size:16px;color:var(--muted);max-width:300px;line-height:1.7;margin-bottom:32px;}
+.hero-stats{
+  display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:36px;
 }
-.form-input:focus,.form-textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,93,38,0.1);background:#fff;}
-.form-input.error,.form-textarea.error{border-color:#ef4444;box-shadow:0 0 0 3px rgba(239,68,68,0.1);}
-.form-textarea{resize:vertical;min-height:80px;}
-.form-hint{font-size:11px;color:var(--muted);margin-top:4px;}
-.form-error{font-size:11px;color:#ef4444;margin-top:4px;display:none;}
-.form-input.error + .form-error,.form-textarea.error + .form-error{display:block;}
-.modal-foot{padding:0 1.4rem 1.4rem;display:flex;gap:10px;}
-.btn-submit{
-  flex:1;background:var(--ink);color:#fff;border:none;
-  font-family:'Outfit',sans-serif;font-size:14px;font-weight:600;
-  border-radius:10px;padding:13px;cursor:pointer;transition:all 0.15s;
+.hero-stat{
+  background:rgba(255,255,255,.04);border:1px solid var(--b2);
+  border-radius:50px;padding:7px 14px;font-size:12px;font-weight:600;color:var(--muted);
+  white-space:nowrap;
+}
+.hero-stat b{color:var(--text);}
+.hero-stat.hot{background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.3);color:#fb923c;}
+.hero-btns{display:flex;flex-direction:column;gap:12px;width:100%;max-width:320px;}
+.hero-scroll{
+  position:absolute;bottom:28px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  font-size:11px;color:var(--dim);letter-spacing:0.5px;
+}
+.hero-scroll-arrow{
+  width:28px;height:28px;border-radius:50%;border:1px solid var(--b2);
+  display:flex;align-items:center;justify-content:center;font-size:13px;
+  animation:bounce 2s infinite;
+}
+@keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(4px);}}
+
+/* ── SECTION WRAPPER ── */
+.section{padding:64px 20px 0;max-width:480px;margin:0 auto;}
+.section-head{margin-bottom:32px;}
+.section-eyebrow{
+  font-size:10.5px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;
+  margin-bottom:8px;
+}
+.section-eyebrow.ws{color:var(--indigo);}
+.section-eyebrow.tools{color:var(--orange);}
+.section-title{font-size:28px;font-weight:800;line-height:1.2;margin-bottom:6px;}
+.section-sub{font-size:14px;color:var(--muted);line-height:1.6;}
+
+/* ── OFFER PILL ── */
+.offer-pill{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);
+  color:#fb923c;font-size:13px;font-weight:700;
+  padding:9px 20px;border-radius:50px;margin-bottom:28px;
+}
+
+/* ── PLAN CARDS ── */
+.plans{display:flex;flex-direction:column;gap:14px;padding-bottom:80px;}
+.plan{
+  background:var(--s1);border:2px solid var(--b1);border-radius:var(--r);
+  padding:20px;cursor:pointer;position:relative;overflow:hidden;
+  transition:background 0.2s,border-color 0.2s;user-select:none;
+}
+.plan::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--pc,#6366f1);transform:scaleX(0);transform-origin:left;
+  transition:transform 0.3s ease;
+}
+.plan:hover{background:var(--s2);}
+.plan.sel{border-color:var(--pc,#6366f1);background:var(--s2);}
+.plan.sel::before{transform:scaleX(1);}
+.plan-check{
+  position:absolute;top:18px;right:18px;width:22px;height:22px;
+  border-radius:50%;background:var(--pc,#6366f1);
+  display:none;align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;color:#fff;
+}
+.plan.sel .plan-check{display:flex;}
+.combo-badge{
+  display:inline-block;background:rgba(251,191,36,.15);
+  border:1px solid rgba(251,191,36,.3);color:#fcd34d;
+  font-size:10px;font-weight:800;padding:3px 9px;border-radius:4px;
+  letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;
+}
+.plan-track{font-size:10px;font-weight:800;letter-spacing:2px;
+  text-transform:uppercase;color:var(--pc,#6366f1);margin-bottom:3px;}
+.plan-row{display:flex;align-items:flex-start;justify-content:space-between;
+  gap:12px;margin-bottom:14px;}
+.plan-name{font-size:17px;font-weight:700;margin-bottom:2px;}
+.plan-sub{font-size:12px;color:var(--muted);}
+.plan-dur{
+  background:rgba(255,255,255,.06);border:1px solid var(--b1);
+  color:var(--muted);font-size:11px;font-weight:600;
+  padding:4px 11px;border-radius:20px;white-space:nowrap;flex-shrink:0;
+}
+.plan-pricing{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.plan-orig{font-size:13px;color:var(--dim);text-decoration:line-through;}
+.plan-price{font-size:26px;font-weight:900;color:var(--pc,#6366f1);}
+.plan-save{
+  background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);
+  color:#34d399;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;
+}
+.plan-div{border:none;border-top:1px solid var(--b1);margin:16px 0 14px;}
+.plan-feats{list-style:none;display:flex;flex-direction:column;gap:7px;}
+.plan-feats li{
+  display:flex;align-items:flex-start;gap:8px;
+  font-size:13px;color:#cbd5e1;line-height:1.45;
+}
+.plan-feats li::before{
+  content:'✓';color:var(--pc,#6366f1);font-size:11px;
+  font-weight:900;flex-shrink:0;margin-top:2px;
+}
+.plan-btn{
   display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;margin-top:20px;padding:14px;border-radius:50px;
+  background:var(--ws-grad);color:#fff;font-family:inherit;
+  font-size:15px;font-weight:700;border:none;cursor:pointer;
+  box-shadow:0 4px 20px rgba(99,102,241,.35);
+  transition:opacity 0.15s,transform 0.15s;
 }
-.btn-submit:hover{background:var(--accent);}
-.btn-submit:disabled{opacity:0.6;cursor:not-allowed;}
-.btn-cancel{
-  background:#f0ede6;color:var(--ink2);border:none;
-  font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;
-  border-radius:10px;padding:13px 18px;cursor:pointer;transition:background 0.15s;
-}
-.btn-cancel:hover{background:#e0ddd6;}
+.plan-btn:hover{opacity:.9;transform:translateY(-1px);}
+.plan-btn:active{transform:translateY(0);}
 
-/* SUCCESS STATE */
-.modal-success{
-  padding:2.5rem 1.5rem;text-align:center;display:none;
+/* ── PRODUCT CARDS ── */
+.tools-grid{display:flex;flex-direction:column;gap:12px;padding-bottom:80px;}
+.product{
+  background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);
+  padding:20px 20px 16px;position:relative;overflow:hidden;
+  transition:border-color 0.2s;
 }
-.modal-success .success-icon{
-  width:56px;height:56px;border-radius:50%;background:#dcfce7;
-  color:#15803d;font-size:1.6rem;display:flex;align-items:center;
-  justify-content:center;margin:0 auto 1rem;
+.product:hover{border-color:var(--b2);}
+.product-top{display:flex;align-items:flex-start;justify-content:space-between;
+  margin-bottom:14px;}
+.product-icon{width:42px;height:42px;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
+.p-badge{font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  border-radius:20px;padding:3px 10px;font-weight:700;white-space:nowrap;}
+.p-badge.live{background:rgba(16,185,129,.12);color:#34d399;
+  border:1px solid rgba(16,185,129,.25);}
+.p-badge.custom{background:rgba(251,191,36,.1);color:#fcd34d;
+  border:1px solid rgba(251,191,36,.25);}
+.p-badge.fire{background:rgba(249,115,22,.12);color:#fb923c;
+  border:1px solid rgba(249,115,22,.3);}
+.p-badge.ping{background:rgba(99,102,241,.12);color:#a5b4fc;
+  border:1px solid rgba(99,102,241,.3);}
+.product-num{font-size:11px;color:var(--dim);font-weight:500;margin-bottom:3px;}
+.product-name{font-size:16px;font-weight:700;margin-bottom:6px;line-height:1.25;}
+.product-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:10px;}
+.product-meta{font-size:11.5px;color:var(--dim);margin-bottom:14px;line-height:1.5;}
+.product-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.btn-interest{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.3);
+  color:#fb923c;font-family:inherit;font-size:13px;font-weight:600;
+  border-radius:8px;padding:9px 16px;cursor:pointer;
+  transition:background 0.15s,border-color 0.15s;
 }
-.modal-success h3{font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:0.5rem;}
-.modal-success p{font-size:13px;color:var(--muted);line-height:1.6;}
-.modal-success .btn-done{
-  margin-top:1.25rem;background:var(--ink);color:#fff;border:none;
-  font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;
+.btn-interest:hover{background:rgba(249,115,22,.2);border-color:rgba(249,115,22,.5);}
+.btn-visit{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(255,255,255,.05);border:1px solid var(--b2);
+  color:var(--muted);font-family:inherit;font-size:13px;font-weight:500;
+  border-radius:8px;padding:9px 16px;cursor:pointer;text-decoration:none;
+  transition:background 0.15s;
+}
+.btn-visit:hover{background:rgba(255,255,255,.08);}
+
+/* READY4LAUNCH featured card */
+.product.featured{background:linear-gradient(145deg,#0d0d1a,#131325);
+  border-color:rgba(99,102,241,.3);}
+.product.featured .product-name,.product.featured .product-desc{color:var(--text);}
+.r4l-price{text-align:center;padding:16px 0 12px;}
+.r4l-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:4px;}
+.r4l-amount{font-size:2rem;font-weight:900;color:#fb923c;}
+.r4l-label{font-size:12px;color:var(--muted);}
+.r4l-orig{font-size:13px;color:var(--dim);text-decoration:line-through;}
+.r4l-save{
+  display:inline-block;background:rgba(74,222,128,.15);color:#4ade80;
+  font-size:11px;font-weight:700;border-radius:20px;padding:3px 10px;margin-bottom:12px;
+}
+.r4l-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px;}
+.r4l-cell{background:rgba(255,255,255,.05);border-radius:8px;
+  padding:10px 12px;text-align:center;}
+.r4l-cell-n{font-size:1.2rem;font-weight:800;color:#fb923c;}
+.r4l-cell-l{font-size:11px;color:var(--muted);margin-top:2px;}
+.btn-preorder{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;padding:14px;border-radius:50px;
+  background:var(--tools-grad);color:#fff;font-family:inherit;
+  font-size:15px;font-weight:700;border:none;cursor:pointer;
+  box-shadow:0 4px 20px rgba(249,115,22,.35);
+  transition:opacity 0.15s,transform 0.15s;
+}
+.btn-preorder:hover{opacity:.9;transform:translateY(-1px);}
+
+/* ── SECTION DIVIDER ── */
+.section-divider{
+  max-width:480px;margin:72px auto 0;padding:0 20px;
+  display:flex;align-items:center;gap:16px;
+}
+.section-divider::before,.section-divider::after{
+  content:'';flex:1;height:1px;background:var(--b1);
+}
+.divider-label{
+  font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;
+  color:var(--dim);white-space:nowrap;
+}
+
+/* ── FOOTER ── */
+.footer{
+  max-width:480px;margin:72px auto 0;padding:40px 24px 48px;
+  text-align:center;border-top:1px solid var(--b1);
+}
+.footer-brand{font-size:18px;font-weight:800;margin-bottom:8px;
+  background:var(--ws-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.footer-exp{font-size:12px;color:var(--dim);line-height:1.8;margin-bottom:16px;}
+.footer-badges{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:20px;}
+.f-badge{background:var(--s1);border:1px solid var(--b1);border-radius:6px;
+  padding:4px 10px;font-size:11px;font-weight:600;color:var(--muted);}
+.footer-note{font-size:11px;color:var(--dim);line-height:1.7;}
+.footer-note strong{color:var(--orange);}
+
+/* ── BACKDROP ── */
+.backdrop{
+  position:fixed;inset:0;z-index:600;
+  background:rgba(0,0,0,.7);backdrop-filter:blur(8px);
+  opacity:0;pointer-events:none;
+  transition:opacity 0.3s ease;
+}
+.backdrop.open{opacity:1;pointer-events:all;}
+
+/* ── BOTTOM SHEET (shared) ── */
+.sheet{
+  position:fixed;bottom:0;left:0;right:0;z-index:700;
+  max-width:520px;margin:0 auto;
+  background:var(--s1);border-radius:24px 24px 0 0;
+  border-top:1px solid var(--b2);
+  transform:translateY(100%);
+  transition:transform 0.4s cubic-bezier(0.32,0.72,0,1);
+  will-change:transform;
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  display:flex;flex-direction:column;
+  max-height:92svh;
+}
+.sheet.open{transform:translateY(0);}
+.sheet-handle{
+  width:40px;height:4px;background:var(--b2);border-radius:2px;
+  margin:12px auto 0;flex-shrink:0;cursor:grab;
+}
+.sheet-header{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 20px 14px;border-bottom:1px solid var(--b1);flex-shrink:0;
+}
+.sheet-back{
+  background:none;border:none;color:var(--muted);font-size:14px;
+  font-weight:600;cursor:pointer;padding:4px;display:flex;align-items:center;gap:4px;
+  transition:color 0.15s;flex-shrink:0;
+}
+.sheet-back:hover{color:var(--text);}
+.sheet-title{flex:1;font-size:15px;font-weight:700;}
+.sheet-steps{display:flex;gap:5px;flex-shrink:0;}
+.sheet-step-dot{width:6px;height:6px;border-radius:50%;background:var(--b2);
+  transition:background 0.2s;}
+.sheet-step-dot.active{background:var(--indigo);}
+.sheet-step-dot.done{background:var(--teal);}
+.sheet-body{flex:1;overflow-y:auto;padding:20px;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
+.sheet-body::-webkit-scrollbar{display:none;}
+.sheet-foot{padding:16px 20px;border-top:1px solid var(--b1);flex-shrink:0;}
+
+/* Plan pill inside sheet */
+.sheet-plan-pill{
+  display:flex;align-items:center;gap:10px;
+  background:var(--s2);border:1px solid var(--b2);border-radius:12px;
+  padding:12px 16px;margin-bottom:22px;
+}
+.spp-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.spp-name{font-size:14px;font-weight:600;flex:1;}
+.spp-price{font-size:13px;color:var(--muted);flex-shrink:0;}
+.spp-change{font-size:12px;color:var(--blue);cursor:pointer;font-weight:600;
+  background:none;border:none;flex-shrink:0;}
+.spp-change:hover{text-decoration:underline;}
+
+/* Batch cards inside sheet */
+.batch-cards{display:flex;flex-direction:column;gap:12px;margin-bottom:8px;}
+.batch-card{
+  background:var(--s2);border:2px solid var(--b1);border-radius:var(--r);
+  padding:18px;cursor:pointer;display:flex;align-items:flex-start;gap:14px;
+  transition:border-color 0.2s,background 0.2s;
+}
+.batch-card:hover{background:var(--s3);}
+.batch-card.sel{border-color:var(--blue);background:rgba(59,130,246,.06);}
+.batch-icon{width:48px;height:48px;border-radius:12px;background:rgba(255,255,255,.05);
+  display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.batch-card.sel .batch-icon{background:rgba(59,130,246,.15);}
+.batch-info{flex:1;}
+.batch-name{font-size:15px;font-weight:700;margin-bottom:3px;}
+.batch-days{font-size:13px;font-weight:600;color:var(--blue);}
+.batch-time{font-size:12px;color:var(--muted);margin-top:2px;}
+.batch-desc{font-size:12px;color:var(--dim);margin-top:6px;line-height:1.4;}
+.batch-chk{
+  width:22px;height:22px;border-radius:50%;background:var(--blue);
+  display:none;align-items:center;justify-content:center;
+  font-size:11px;font-weight:900;color:#fff;flex-shrink:0;
+}
+.batch-card.sel .batch-chk{display:flex;}
+
+/* Form inside sheet */
+.form-row{margin-bottom:16px;}
+.f-label{display:block;font-size:12px;font-weight:600;color:var(--muted);
+  letter-spacing:.3px;margin-bottom:6px;}
+.f-label span{color:var(--red);}
+.f-input,.f-textarea{
+  width:100%;background:rgba(255,255,255,.04);
+  border:1.5px solid var(--b1);color:var(--text);
+  padding:13px 15px;border-radius:var(--r-sm);
+  font-family:inherit;font-size:16px;outline:none;
+  -webkit-appearance:none;transition:border-color 0.2s,background 0.2s;
+}
+.f-input:focus,.f-textarea:focus{
+  border-color:var(--blue);background:rgba(59,130,246,.05);}
+.f-input::placeholder,.f-textarea::placeholder{color:rgba(255,255,255,.18);}
+.f-input.err,.f-textarea.err{border-color:var(--red);}
+.f-hint{font-size:11px;color:var(--dim);margin-top:4px;}
+.f-error{font-size:11px;color:#fca5a5;margin-top:4px;display:none;}
+.f-input.err~.f-error,.f-textarea.err~.f-error{display:block;}
+.f-textarea{resize:vertical;min-height:80px;}
+
+/* Payment step */
+.pay-card{
+  background:linear-gradient(135deg,#0c1220,#0f1530);
+  border:1.5px solid rgba(59,130,246,.2);border-radius:var(--r);
+  padding:28px 20px;text-align:center;margin-bottom:20px;
+}
+.pay-label{font-size:11px;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.pay-amount{font-size:52px;font-weight:900;color:var(--blue);letter-spacing:-2px;}
+.pay-plan{font-size:13px;color:var(--muted);margin-top:8px;}
+.pay-methods{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:20px;}
+.pay-methods span{font-size:12px;color:var(--muted);}
+.pay-tag{background:rgba(255,255,255,.06);border:1px solid var(--b1);
+  border-radius:6px;padding:4px 10px;font-size:12px;font-weight:600;color:var(--text);}
+.rzp-badge{display:flex;align-items:center;justify-content:center;gap:5px;
+  margin-top:14px;font-size:11px;color:var(--dim);}
+
+/* Thank you step */
+.ty-wrap{text-align:center;padding:12px 0 20px;}
+.ty-icon{
+  width:72px;height:72px;border-radius:50%;margin:0 auto 24px;
+  background:linear-gradient(135deg,#10b981,#059669);
+  display:flex;align-items:center;justify-content:center;font-size:32px;
+  box-shadow:0 8px 32px rgba(16,185,129,.45);
+  animation:pop .5s cubic-bezier(.175,.885,.32,1.275) both;
+}
+@keyframes pop{from{transform:scale(0);opacity:0;}to{transform:scale(1);opacity:1;}}
+.ty-title{font-size:28px;font-weight:900;margin-bottom:10px;}
+.ty-sub{font-size:14px;color:var(--muted);max-width:280px;margin:0 auto 24px;line-height:1.7;}
+.summary{background:var(--s2);border:1px solid var(--b1);border-radius:var(--r);
+  overflow:hidden;margin-bottom:20px;text-align:left;}
+.s-row{display:flex;justify-content:space-between;align-items:center;
+  padding:12px 16px;border-bottom:1px solid var(--b1);font-size:13px;gap:12px;}
+.s-row:last-child{border-bottom:none;}
+.s-key{color:var(--muted);flex-shrink:0;}
+.s-val{font-weight:600;text-align:right;word-break:break-all;}
+.s-pill{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);
+  color:#34d399;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;}
+
+/* Lead capture sheet */
+.lead-success{display:none;text-align:center;padding:24px 0;}
+.lead-success .ls-icon{width:56px;height:56px;border-radius:50%;
+  background:rgba(16,185,129,.15);color:#34d399;font-size:24px;
+  display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+.lead-success h3{font-size:20px;font-weight:700;margin-bottom:6px;}
+.lead-success p{font-size:13px;color:var(--muted);line-height:1.6;}
+.btn-close-lead{
+  margin-top:18px;background:var(--s2);border:1px solid var(--b1);
+  color:var(--muted);font-family:inherit;font-size:13px;font-weight:600;
   border-radius:9px;padding:10px 24px;cursor:pointer;transition:background 0.15s;
 }
-.modal-success .btn-done:hover{background:var(--accent);}
+.btn-close-lead:hover{background:var(--s3);}
 
-/* SPINNER */
-.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.35);border-top-color:#fff;border-radius:50%;animation:spin 0.7s linear infinite;}
+/* ── BUTTONS (shared) ── */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  border:none;font-family:inherit;cursor:pointer;
+  transition:opacity .15s,transform .15s;touch-action:manipulation;
+}
+.btn:active{transform:translateY(1px);}
+.btn-primary{
+  width:100%;padding:15px;border-radius:50px;
+  background:var(--ws-grad);color:#fff;font-size:15px;font-weight:700;
+  box-shadow:0 4px 20px rgba(99,102,241,.35);
+}
+.btn-primary:hover{opacity:.9;}
+.btn-primary:disabled{opacity:.55;pointer-events:none;}
+.btn-success-color{background:linear-gradient(135deg,#10b981,#059669);
+  box-shadow:0 4px 20px rgba(16,185,129,.35);}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);
+  border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
+.err-box{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);
+  color:#fca5a5;padding:12px 14px;border-radius:10px;font-size:13px;
+  margin-bottom:14px;display:none;}
 
-/* RESPONSIVE */
-@media(min-width:600px){
-  .cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-  .card.featured,.card.fullwidth{grid-column:1/-1;}
-  .hero h1{font-size:2.5rem;}
+/* ── ANIMATIONS ── */
+.fade-in{opacity:0;transform:translateY(20px);
+  transition:opacity .6s ease,transform .6s ease;}
+.fade-in.visible{opacity:1;transform:translateY(0);}
+
+/* ── RESPONSIVE ── */
+@media(min-width:520px){
+  .tools-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .product.featured{grid-column:1/-1;}
 }
 @media(min-width:900px){
-  .cards{grid-template-columns:1fr 1fr 1fr;}
-  .hero{padding:4rem 2rem 3rem;}
-  .section{padding:2.5rem 2rem 0;}
-  .cards{padding:0 2rem 2rem;}
-  .qr-section{margin:2rem 2rem;}
-  .steps-bar{margin:0 2rem 2rem;}
-  .divider{margin:0 2rem;}
+  .tools-grid{grid-template-columns:1fr 1fr 1fr;}
+  .section{padding:80px 24px 0;}
+  .hero{padding:100px 40px 80px;}
 }
 `;
-  const style = document.createElement('style');
-  style.textContent = css;
-  document.head.appendChild(style);
+  var s = document.createElement('style');
+  s.textContent = css;
+  document.head.appendChild(s);
 })();
 
-// ── Data ──────────────────────────────────────────────────────────────────────
-const navLinks = [
-  { href: '#resume',     label: 'Resume Builder'    },
-  { href: '#ready4exam', label: 'Ready4Exam'         },
-  { href: '#telugu',     label: 'TeluguBuddy'        },
-  { href: '#seo',        label: 'SEO Optimizer'      },
-  { href: '#patent',     label: 'Patent Assistant'   },
-  { href: '#wa-mktg',    label: 'WhatsApp Mktg'      },
-  { href: '#sector',     label: 'Sector Mktg'        },
-  { href: '#dev',        label: 'Custom Dev'         },
-  { href: '#r4l',        label: 'Ready4Launch 🔥'    },
+// ── DATA ──────────────────────────────────────────────────────────────────────
+
+var PLANS = [
+  {
+    id:'track-a', track:'TRACK A', name:'AI Productivity Essentials',
+    sub:'Use AI Effectively', dur:'5 Days',
+    orig:1999, price:999, save:'50% OFF', color:'#8b5cf6',
+    feats:[
+      'Understanding AI in simple language',
+      'Prompt & Content Engineering',
+      'Workflows for daily life & work',
+      'ChatGPT, Gemini, Claude, Grok — when to use what',
+      'Free vs Paid AI Tools — what actually matters',
+      'AI Hygiene, Privacy & Guardrails',
+      'NotebookLM & AI knowledge tools',
+      'AI Agents vs Agentic AI — the real difference',
+      'Real-life use cases: students, professionals & businesses',
+    ],
+  },
+  {
+    id:'track-b', track:'TRACK B', name:'AI App Builder',
+    sub:'Build with AI', dur:'10 Days',
+    orig:4999, price:2499, save:'50% OFF', color:'#10b981',
+    feats:[
+      'Introduction to Vibe Coding',
+      'Building apps without traditional coding',
+      'GitHub, Vercel, Supabase & Firebase',
+      'Frontend + Backend development using AI',
+      'GitHub Actions & workflow automation',
+      'AI-powered web & mobile app development',
+      'Serverless deployment made simple',
+      'Real project: idea → deployment',
+      'Connecting AI models, APIs & databases',
+      'Launching SaaS products & AI tools quickly',
+    ],
+  },
+  {
+    id:'track-c', track:'TRACK C', name:'Advanced AI Workflows',
+    sub:'Control and Scale AI', dur:'5 Days',
+    orig:2999, price:1499, save:'50% OFF', color:'#f59e0b',
+    feats:[
+      'API integrations, keys & unlimited workflows',
+      'Advanced automation systems using AI',
+      'Coding AI Agents (Copilot, Devin, Claude…)',
+      'Privacy-first & secure AI workflows',
+      'Creating personal GPTs & private AI assistants',
+      'Creating bots & automation pipelines',
+      'Cloud AI on Azure, AWS & Google Cloud',
+      'Open-source AI models (Ollama, Mistral, DeepSeek)',
+      'Local AI setup & self-hosted systems',
+    ],
+  },
+  {
+    id:'combo', track:'ALL 3 TRACKS', name:'Combo — Get All 3',
+    sub:'Unlock everything. Build anything.', dur:'24+ Days',
+    orig:9999, price:4499, save:'55% OFF', color:'#6366f1', isCombo:true,
+    feats:[
+      'All 3 Tracks — complete access',
+      '24+ days of structured learning',
+      'Real projects — hands-on every day',
+      'Lifetime recordings access',
+    ],
+  },
 ];
 
-const products = [
+var BATCHES = [
+  { id:'weekday', name:'Weekday Batch', days:'Monday – Friday',
+    time:'8:00 PM – 10:00 PM IST', icon:'💼',
+    desc:'Ideal for working professionals & students with weekends free' },
+  { id:'weekend', name:'Weekend Batch', days:'Saturday & Sunday',
+    time:'10:00 AM – 1:00 PM IST', icon:'🌅',
+    desc:'Ideal for those who prefer a relaxed, deep-dive weekend pace' },
+];
+
+var PRODUCTS = [
   {
-    id: 'resume', num: '01', icon: '📄', iconBg: '#fff5f0',
-    badge: 'custom', badgeLabel: 'Custom for you',
-    name: 'Resume Builder',
-    desc: 'Turned a 45-minute job application into a 5-minute task. Reads a job description, tailors your resume to match it, formats it — done. This got me a role at PwC.',
-    meta: 'Built to your profile · Any industry · Any role level',
+    id:'resume', num:'01', icon:'📄', iconBg:'rgba(139,92,246,.12)',
+    badge:'custom', badgeLabel:'Custom for you',
+    name:'Resume Builder',
+    desc:'Turned a 45-minute job application into a 5-minute task. Reads a JD, tailors the resume to match, formats it — done. This got me a role at PwC.',
+    meta:'Built to your profile · Any industry · Any role level',
   },
   {
-    id: 'ready4exam', num: '02', icon: '📚', iconBg: '#f0fdf4',
-    badge: 'live', badgeLabel: 'Live — Self Serve',
-    name: 'Ready4Exam Portal',
-    desc: 'A full exam-readiness platform built for students who can\'t afford to miss class. Free modules available. Paid tiers with deeper features. No customisation needed — just use it.',
-    meta: '✓ Free modules available · ✓ Paid tiers on the website · Schools: let\'s discuss deployment',
-    extraBtn: { cls: 'btn-link', label: '🌐 Visit Portal', href: '#' },
-    schoolsBtn: true,
+    id:'ready4exam', num:'02', icon:'📚', iconBg:'rgba(16,185,129,.12)',
+    badge:'live', badgeLabel:'Live · Self Serve',
+    name:'Ready4Exam Portal',
+    desc:'A full exam-readiness platform for students. Free modules available. Paid tiers with deeper features. No customisation needed — just use it.',
+    meta:'✓ Free modules · ✓ Paid tiers · Schools: let\'s discuss deployment',
+    visitBtn: { label:'🌐 Visit Portal', href:'#' },
+    interestLabel:'🏫 Schools — Enquire',
+    schoolMode: true,
   },
   {
-    id: 'telugu', num: '03', icon: '🗣️', iconBg: '#fdf4ff',
-    badge: 'custom', badgeLabel: 'Any Language',
-    name: 'TeluguBuddy',
-    desc: 'Built for my daughter who had Telugu in school — a subject we don\'t speak at home. Chapter-by-chapter, every word with English pronunciation, meaning, and audio. She now enjoys it.',
-    meta: 'Can be built for any language · Tamil, Kannada, Marathi, Hindi, French — you name it',
+    id:'telugu', num:'03', icon:'🗣️', iconBg:'rgba(99,102,241,.12)',
+    badge:'custom', badgeLabel:'Any Language',
+    name:'TeluguBuddy',
+    desc:'Built for my daughter\'s school Telugu. Chapter-by-chapter, every word with pronunciation, meaning, and audio. She now enjoys it.',
+    meta:'Tamil · Kannada · Marathi · Hindi · French — any language',
   },
   {
-    id: 'seo', num: '04', icon: '📈', iconBg: '#fffbeb',
-    badge: 'custom', badgeLabel: 'Custom for you',
-    name: 'SEO Optimisation Tool',
-    desc: 'Used this to grow a YouTube channel to 400 subscribers in one month — with AI-driven descriptions, tags, and keywords most creators don\'t even know exist. Applicable to any business or content channel.',
-    meta: 'YouTube · Website · Blog · Product listings · Any content platform',
+    id:'seo', num:'04', icon:'📈', iconBg:'rgba(245,158,11,.12)',
+    badge:'custom', badgeLabel:'Custom for you',
+    name:'SEO Optimisation Tool',
+    desc:'Grew a YouTube channel to 400 subscribers in one month with AI-driven descriptions, tags, and keywords most creators never discover.',
+    meta:'YouTube · Website · Blog · Product listings · Any platform',
   },
   {
-    id: 'patent', num: '05', icon: '📋', iconBg: '#f0f9ff',
-    badge: 'custom', badgeLabel: 'Custom for you',
-    name: 'Patent Assistant',
-    desc: 'Filed my own provisional patent — solo, no IP lawyer, no partner — using AI to handle the research, prior art search, and documentation drafting. If you have an idea worth protecting, this is how you start.',
-    meta: 'Provisional patent drafting · Prior art research · Documentation · India & international',
+    id:'patent', num:'05', icon:'📋', iconBg:'rgba(59,130,246,.12)',
+    badge:'custom', badgeLabel:'Custom for you',
+    name:'Patent Assistant',
+    desc:'Filed my own provisional patent — solo, no IP lawyer — using AI for research, prior art search, and documentation drafting.',
+    meta:'Provisional patent drafting · Prior art · India & international',
   },
   {
-    id: 'wa-mktg', num: '06', icon: '💬', iconBg: '#f0fdf4',
-    badge: 'custom', badgeLabel: 'Custom for you',
-    name: 'WhatsApp Marketing App',
-    desc: 'Automated, personalised campaign tool built to market this very AI programme. Crafts messages, schedules them, and reaches your audience where they already are — WhatsApp.',
-    meta: 'Bulk messaging · Personalisation · Campaign scheduling · Any product or service',
+    id:'wa-mktg', num:'06', icon:'💬', iconBg:'rgba(16,185,129,.12)',
+    badge:'custom', badgeLabel:'Custom for you',
+    name:'WhatsApp Marketing App',
+    desc:'Automated, personalised campaign tool. Crafts messages, schedules them, reaches your audience where they already are — WhatsApp.',
+    meta:'Bulk messaging · Personalisation · Campaign scheduling',
   },
   {
-    id: 'sector', num: '07', icon: '🎯', iconBg: '#fff5f0',
-    badge: 'custom', badgeLabel: 'Any Sector',
-    name: 'Sector-Specific Marketing Tool',
-    desc: 'Built a college outreach app that finds every chairman, principal, and dean\'s email address and sends a tailored proposal — fully automated. The same logic works for any sector: healthcare, retail, hospitality, you name it.',
-    meta: 'Built example: College / University outreach · Adaptable to any industry',
+    id:'sector', num:'07', icon:'🎯', iconBg:'rgba(249,115,22,.12)',
+    badge:'custom', badgeLabel:'Any Sector',
+    name:'Sector-Specific Marketing',
+    desc:'Built a college outreach app that finds every chairman, principal, and dean\'s email and sends tailored proposals — fully automated.',
+    meta:'Built for: College / University outreach · Adapts to any industry',
+  },
+  {
+    id:'dev', num:'08', icon:'⚙️', iconBg:'rgba(139,92,246,.12)',
+    badge:'ping', badgeLabel:'Ping Me',
+    name:'Custom App Development',
+    desc:'Bring your idea — I\'ll build the app, test it, and hand it over completely. Website, Android APK, bot, or AI agent. No coding needed from you.',
+    meta:'Web apps · Android APKs · Automation bots · AI agents · Dashboards',
+    interestLabel:'✉ Let\'s Discuss Your Idea',
+  },
+  {
+    id:'r4l', num:'09', icon:'🚀', iconBg:'rgba(249,115,22,.12)',
+    badge:'fire', badgeLabel:'Pre-Booking Open',
+    name:'Ready4Launch — TextToApp',
+    featured: true,
   },
 ];
 
-// ── DOM helpers ───────────────────────────────────────────────────────────────
-function el(tag, props = {}, ...children) {
-  const node = document.createElement(tag);
-  for (const [k, v] of Object.entries(props)) {
-    if (k === 'class') node.className = v;
-    else if (k === 'html')  node.innerHTML = v;
-    else if (k === 'style') node.style.cssText = v;
-    else node.setAttribute(k, v);
-  }
-  for (const child of children) {
-    if (typeof child === 'string') node.appendChild(document.createTextNode(child));
-    else if (child) node.appendChild(child);
-  }
+// ── State ─────────────────────────────────────────────────────────────────────
+var ST = { plan:null, batch:null, reg:{}, payId:null, regStep:1 };
+
+// ── DOM helper ────────────────────────────────────────────────────────────────
+function el(tag, props, children) {
+  var node = document.createElement(tag);
+  if (props) Object.keys(props).forEach(function(k) {
+    if (k === 'class') node.className = props[k];
+    else if (k === 'html') node.innerHTML = props[k];
+    else if (k === 'style') node.style.cssText = props[k];
+    else if (k === 'on') Object.keys(props[k]).forEach(function(ev) {
+      node.addEventListener(ev, props[k][ev]);
+    });
+    else node.setAttribute(k, props[k]);
+  });
+  if (typeof children === 'string') node.textContent = children;
+  else if (Array.isArray(children)) children.forEach(function(c) { if (c) node.appendChild(c); });
+  else if (children) node.appendChild(children);
   return node;
 }
 
-function buildSection(label, title, sub) {
-  const sec = el('div', { class: 'section' });
-  sec.appendChild(el('p', { class: 'section-label' }, label));
-  sec.appendChild(el('p', { class: 'section-title', html: title }));
-  sec.appendChild(el('p', { class: 'section-sub' }, sub));
-  return sec;
+function txt(str) { return document.createTextNode(str); }
+
+// ── PAGE BUILDER ──────────────────────────────────────────────────────────────
+
+function buildPage() {
+  var b = document.body;
+  b.appendChild(buildProgress());
+  b.appendChild(buildNav());
+  b.appendChild(buildHero());
+  b.appendChild(buildWorkshopSection());
+  b.appendChild(buildDivider('WHAT I\'VE BUILT WITH AI'));
+  b.appendChild(buildToolsSection());
+  b.appendChild(buildFooter());
+  buildRegSheet();
+  buildLeadSheet();
+  b.appendChild(el('div', { id:'backdrop', class:'backdrop' }));
+  document.getElementById('backdrop').addEventListener('click', closeAllSheets);
+  initScrollBehavior();
 }
 
-// ── Modal ─────────────────────────────────────────────────────────────────────
-let modalOverlay;
-
-function buildModal() {
-  modalOverlay = el('div', { class: 'modal-overlay', id: 'lead-modal' });
-
-  const modal = el('div', { class: 'modal' });
-
-  // — Head
-  const head = el('div', { class: 'modal-head' });
-  const headText = el('div', { class: 'modal-head-text' });
-  headText.appendChild(el('p', { class: 'modal-product-tag', id: 'modal-product-tag' }, ''));
-  headText.appendChild(el('p', { class: 'modal-title', id: 'modal-title' }, ''));
-  const closeBtn = el('button', { class: 'modal-close', id: 'modal-close' }, '✕');
-  closeBtn.addEventListener('click', closeModal);
-  head.appendChild(headText);
-  head.appendChild(closeBtn);
-  modal.appendChild(head);
-
-  // — Form body
-  const body = el('div', { class: 'modal-body', id: 'modal-form-body' });
-
-  // Name
-  const rowName = el('div', { class: 'form-row' });
-  const lblName = el('label', { class: 'form-label', for: 'f-name' });
-  lblName.innerHTML = 'Your Name <span>*</span>';
-  const inpName = el('input', { class: 'form-input', type: 'text', id: 'f-name', placeholder: 'e.g. Priya Sharma', autocomplete: 'name' });
-  const errName = el('p', { class: 'form-error' }, 'Please enter your name');
-  rowName.appendChild(lblName); rowName.appendChild(inpName); rowName.appendChild(errName);
-  body.appendChild(rowName);
-
-  // Phone
-  const rowPhone = el('div', { class: 'form-row' });
-  const lblPhone = el('label', { class: 'form-label', for: 'f-phone' });
-  lblPhone.innerHTML = 'WhatsApp / Phone <span>*</span>';
-  const inpPhone = el('input', { class: 'form-input', type: 'tel', id: 'f-phone', placeholder: '10-digit mobile number', autocomplete: 'tel' });
-  const errPhone = el('p', { class: 'form-error' }, 'Please enter a valid 10-digit number');
-  rowPhone.appendChild(lblPhone); rowPhone.appendChild(inpPhone); rowPhone.appendChild(errPhone);
-  body.appendChild(rowPhone);
-
-  // Email
-  const rowEmail = el('div', { class: 'form-row' });
-  const lblEmail = el('label', { class: 'form-label', for: 'f-email' }, 'Email Address');
-  const inpEmail = el('input', { class: 'form-input', type: 'email', id: 'f-email', placeholder: 'optional', autocomplete: 'email' });
-  const hintEmail = el('p', { class: 'form-hint' }, 'Optional — for sending you a follow-up summary');
-  rowEmail.appendChild(lblEmail); rowEmail.appendChild(inpEmail); rowEmail.appendChild(hintEmail);
-  body.appendChild(rowEmail);
-
-  // Message
-  const rowMsg = el('div', { class: 'form-row' });
-  const lblMsg = el('label', { class: 'form-label', for: 'f-msg' }, 'What do you need?');
-  const txMsg = el('textarea', { class: 'form-textarea', id: 'f-msg', placeholder: 'Tell me a bit about your use case or what you\'re hoping to achieve...' });
-  rowMsg.appendChild(lblMsg); rowMsg.appendChild(txMsg);
-  body.appendChild(rowMsg);
-
-  modal.appendChild(body);
-
-  // — Success state (hidden by default)
-  const successDiv = el('div', { class: 'modal-success', id: 'modal-success' });
-  const successIcon = el('div', { class: 'success-icon' }, '✓');
-  successDiv.appendChild(successIcon);
-  successDiv.appendChild(el('h3', {}, 'Got it — I\'ll be in touch!'));
-  successDiv.appendChild(el('p', {}, 'Your details have been saved. I\'ll review and reach out within 24 hours.'));
-  const doneBtn = el('button', { class: 'btn-done' }, 'Close');
-  doneBtn.addEventListener('click', closeModal);
-  successDiv.appendChild(doneBtn);
-  modal.appendChild(successDiv);
-
-  // — Footer
-  const foot = el('div', { class: 'modal-foot', id: 'modal-foot' });
-  const submitBtn = el('button', { class: 'btn-submit', id: 'modal-submit' }, '✉ Send My Interest');
-  submitBtn.addEventListener('click', submitLead);
-  const cancelBtn = el('button', { class: 'btn-cancel' }, 'Cancel');
-  cancelBtn.addEventListener('click', closeModal);
-  foot.appendChild(submitBtn);
-  foot.appendChild(cancelBtn);
-  modal.appendChild(foot);
-
-  modalOverlay.appendChild(modal);
-  document.body.appendChild(modalOverlay);
-
-  // Close on backdrop click
-  modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
-  // Close on Esc
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+function buildProgress() {
+  return el('div', { id:'progress' });
 }
 
-function openModal(productName) {
-  document.getElementById('modal-product-tag').textContent = 'Expressing interest in';
-  document.getElementById('modal-title').textContent = productName;
-  // reset form
-  ['f-name','f-phone','f-email','f-msg'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.value = ''; el.classList.remove('error'); }
+function buildNav() {
+  var nav = el('div', { id:'top-nav', class:'nav' });
+  nav.appendChild(el('div', { class:'nav-brand' }, 'AI for EveryOne'));
+  var tabs = el('div', { class:'nav-tabs' });
+  var t1 = el('button', { class:'nav-tab active', 'data-tab':'workshop' }, 'Workshop');
+  var t2 = el('button', { class:'nav-tab', 'data-tab':'tools' }, 'Tools');
+  t1.addEventListener('click', function() { scrollToSection('workshop'); });
+  t2.addEventListener('click', function() { scrollToSection('tools'); });
+  tabs.appendChild(t1); tabs.appendChild(t2);
+  nav.appendChild(tabs);
+  var cta = el('button', { class:'nav-cta' }, 'Reserve →');
+  cta.addEventListener('click', function() { scrollToSection('workshop'); });
+  nav.appendChild(cta);
+  return nav;
+}
+
+function buildHero() {
+  var hero = el('div', { class:'hero' });
+
+  var eyebrow = el('div', { class:'hero-eyebrow' });
+  eyebrow.appendChild(el('span', { class:'hero-dot' }));
+  eyebrow.appendChild(txt('Live AI Workshop + AI Tools'));
+  hero.appendChild(eyebrow);
+
+  var h1 = el('h1', {});
+  h1.innerHTML = '<span class="g1">AI</span> for<br><span class="g2">EveryOne</span>';
+  hero.appendChild(h1);
+
+  hero.appendChild(el('p', { class:'hero-sub' },
+    'Learn it live. Use it daily. Build with it — starting today.'));
+
+  var stats = el('div', { class:'hero-stats' });
+  [
+    { txt: '<b>4</b> AI Tracks' },
+    { txt: '<b>9</b> AI Tools Built', cls: '' },
+    { txt: '🔥 <b>50% OFF</b> This Session', cls: 'hot' },
+  ].forEach(function(s) {
+    var stat = el('div', { class:'hero-stat' + (s.cls ? ' '+s.cls : '') });
+    stat.innerHTML = s.txt;
+    stats.appendChild(stat);
   });
-  document.getElementById('modal-form-body').style.display = 'block';
-  document.getElementById('modal-foot').style.display = 'flex';
-  document.getElementById('modal-success').style.display = 'none';
-  const sb = document.getElementById('modal-submit');
-  sb.innerHTML = '✉ Send My Interest';
-  sb.disabled = false;
-  modalOverlay.classList.add('open');
-  document.body.style.overflow = 'hidden';
-  setTimeout(() => document.getElementById('f-name').focus(), 100);
+  hero.appendChild(stats);
+
+  var btns = el('div', { class:'hero-btns' });
+  var b1 = el('button', { class:'btn btn-primary' }, 'Reserve My Seat →');
+  b1.addEventListener('click', function() { scrollToSection('workshop'); });
+  var b2 = el('button', {
+    class:'btn',
+    style:'width:100%;padding:14px;border-radius:50px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);color:var(--muted);font-size:14px;font-weight:600;'
+  }, 'Explore AI Tools →');
+  b2.addEventListener('click', function() { scrollToSection('tools'); });
+  btns.appendChild(b1); btns.appendChild(b2);
+  hero.appendChild(btns);
+
+  var scroll = el('div', { class:'hero-scroll' });
+  scroll.appendChild(el('div', { class:'hero-scroll-arrow' }, '↓'));
+  hero.appendChild(scroll);
+
+  return hero;
 }
 
-function closeModal() {
-  modalOverlay.classList.remove('open');
-  document.body.style.overflow = '';
+// ── Workshop section ──────────────────────────────────────────────────────────
+function buildWorkshopSection() {
+  var wrap = el('div', { id:'workshop', class:'section fade-in' });
+
+  var head = el('div', { class:'section-head' });
+  head.appendChild(el('div', { class:'section-eyebrow ws' }, '🎓 Live · Online · Cohort-Based'));
+  head.appendChild(el('div', { class:'section-title' }, 'The AI Workshop'));
+  head.appendChild(el('div', { class:'section-sub' },
+    'Pick your track. Learn live with a small cohort. Build real things.'));
+  wrap.appendChild(head);
+
+  var pill = el('div', { class:'offer-pill' });
+  pill.innerHTML = '🎁&nbsp; FLAT 50% OFF — Limited Seats This Session';
+  wrap.appendChild(pill);
+
+  var plans = el('div', { class:'plans', id:'plans-list' });
+  PLANS.forEach(function(p) { plans.appendChild(buildPlanCard(p)); });
+  wrap.appendChild(plans);
+
+  return wrap;
 }
 
-// ── Form validation & submission ──────────────────────────────────────────────
-function validate() {
-  let ok = true;
-  const name  = document.getElementById('f-name');
-  const phone = document.getElementById('f-phone');
+function buildPlanCard(p) {
+  var card = el('div', {
+    class:'plan',
+    style:'--pc:' + p.color,
+    id:'plan-' + p.id,
+  });
 
-  name.classList.remove('error');
-  phone.classList.remove('error');
+  var chk = el('div', { class:'plan-check' }, '✓');
+  card.appendChild(chk);
 
-  if (!name.value.trim()) { name.classList.add('error'); ok = false; }
-  if (!/^\d{10}$/.test(phone.value.replace(/\s/g, ''))) { phone.classList.add('error'); ok = false; }
-  return ok;
-}
+  if (p.isCombo) card.appendChild(el('div', { class:'combo-badge' }, '★ Best Value'));
+  card.appendChild(el('div', { class:'plan-track' }, p.track));
 
-async function submitLead() {
-  if (!validate()) return;
+  var row = el('div', { class:'plan-row' });
+  var info = el('div', {});
+  info.appendChild(el('div', { class:'plan-name' }, p.name));
+  info.appendChild(el('div', { class:'plan-sub' }, p.sub));
+  row.appendChild(info);
+  row.appendChild(el('div', { class:'plan-dur' }, p.dur));
+  card.appendChild(row);
 
-  const sb = document.getElementById('modal-submit');
-  sb.innerHTML = '<div class="spinner"></div> Sending…';
-  sb.disabled = true;
+  var pricing = el('div', { class:'plan-pricing' });
+  pricing.appendChild(el('span', { class:'plan-orig' }, '₹' + p.orig.toLocaleString('en-IN')));
+  pricing.appendChild(el('span', { class:'plan-price' }, '₹' + p.price.toLocaleString('en-IN')));
+  pricing.appendChild(el('span', { class:'plan-save' }, p.save));
+  card.appendChild(pricing);
 
-  const payload = {
-    product : document.getElementById('modal-title').textContent,
-    name    : document.getElementById('f-name').value.trim(),
-    phone   : document.getElementById('f-phone').value.trim(),
-    email   : document.getElementById('f-email').value.trim(),
-    message : document.getElementById('f-msg').value.trim(),
-    timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
-  };
+  card.appendChild(el('hr', { class:'plan-div' }));
 
-  try {
-    if (SHEET_ENDPOINT === 'YOUR_GOOGLE_APPS_SCRIPT_URL') {
-      // Dev mode — log to console and show success
-      console.table(payload);
-      await new Promise(r => setTimeout(r, 800));
-    } else {
-      await fetch(SHEET_ENDPOINT, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-    }
-    // Show success
-    document.getElementById('modal-form-body').style.display = 'none';
-    document.getElementById('modal-foot').style.display = 'none';
-    document.getElementById('modal-success').style.display = 'block';
-  } catch (err) {
-    sb.innerHTML = '✉ Send My Interest';
-    sb.disabled = false;
-    alert('Something went wrong — please try again.');
-  }
-}
+  var ul = el('ul', { class:'plan-feats' });
+  p.feats.forEach(function(f) { ul.appendChild(el('li', {}, f)); });
+  card.appendChild(ul);
 
-// ── Card builder ──────────────────────────────────────────────────────────────
-function buildCard(p) {
-  const card = el('div', { class: 'card', id: p.id });
-  const top  = el('div', { class: 'card-top' });
-  top.appendChild(el('div', { class: 'card-icon', style: `background:${p.iconBg}` }, p.icon));
-  top.appendChild(el('span', { class: `badge ${p.badge}` }, p.badgeLabel));
-  card.appendChild(top);
-  card.appendChild(el('p', { class: 'card-num' }, `Product ${p.num}`));
-  card.appendChild(el('p', { class: 'card-name' }, p.name));
-  card.appendChild(el('p', { class: 'card-desc' }, p.desc));
-  card.appendChild(el('p', { class: 'card-meta' }, p.meta));
+  var btn = el('button', { class:'btn plan-btn' }, 'Reserve My Seat →');
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    openRegSheet(p);
+  });
+  card.appendChild(btn);
 
-  const actions = el('div', { class: 'card-actions' });
-  if (p.extraBtn) {
-    actions.appendChild(el('a', { class: `btn ${p.extraBtn.cls}`, href: p.extraBtn.href, target: '_blank' }, p.extraBtn.label));
-  }
-  const cta = el('button', { class: 'btn btn-interest' });
-  cta.textContent = p.schoolsBtn ? '🏫 Schools — Register Interest' : '✉ I\'m Interested';
-  cta.addEventListener('click', () => openModal(p.name + (p.schoolsBtn ? ' (School Deployment)' : '')));
-  actions.appendChild(cta);
-  card.appendChild(actions);
+  card.addEventListener('click', function() {
+    document.querySelectorAll('.plan').forEach(function(c) { c.classList.remove('sel'); });
+    card.classList.add('sel');
+  });
+
   return card;
 }
 
-// ── Page builder ──────────────────────────────────────────────────────────────
-function buildPage() {
-  const body = document.body;
+// ── Tools section ─────────────────────────────────────────────────────────────
+function buildToolsSection() {
+  var wrap = el('div', { id:'tools', class:'section fade-in' });
 
-  // Hero
-  const hero = el('div', { class: 'hero' });
-  hero.appendChild(el('div', { class: 'hero-badge' }, 'AI Tools Portfolio'));
-  hero.appendChild(el('h1', { html: 'Built from <em>experience.</em><br>Available for you.' }));
-  hero.appendChild(el('p', {}, '22 years in IT. Zero coding. All of these were built to solve real problems — and they work. If you need one, let\'s talk.'));
-  const note = el('div', { class: 'hero-note' });
-  note.appendChild(el('span', {}));
-  note.appendChild(document.createTextNode('All products built solo, using AI — no developer required'));
-  hero.appendChild(note);
-  body.appendChild(hero);
+  var head = el('div', { class:'section-head' });
+  head.appendChild(el('div', { class:'section-eyebrow tools' }, '🛠 Built From 22 Years of IT Experience'));
+  head.appendChild(el('div', { class:'section-title' }, 'AI Tools That Work'));
+  head.appendChild(el('div', { class:'section-sub' },
+    'Every product below was built solo using AI to solve a real problem. Express interest — I\'ll customise it for you.'));
+  wrap.appendChild(head);
 
-  // Nav strip
-  const strip = el('div', { class: 'strip' });
-  navLinks.forEach(l => strip.appendChild(el('a', { href: l.href }, l.label)));
-  body.appendChild(strip);
+  var grid = el('div', { class:'tools-grid' });
+  PRODUCTS.forEach(function(p) { grid.appendChild(buildProductCard(p)); });
+  wrap.appendChild(grid);
 
-  // How it works
-  body.appendChild(buildSection('How This Works', 'How This Works',
-    'Browse a product, tap the button, fill in your details — and you\'re done. I\'ll review and reach out within 24 hours.'));
-  const stepsBar = el('div', { class: 'steps-bar' });
-  [['1','Browse products below'],['2','Tap the interest button'],['3','I\'ll reach out in 24 hrs']].forEach(([n, t]) => {
-    const s = el('div', { class: 'step' });
-    s.appendChild(el('div', { class: 'step-num' }, n));
-    s.appendChild(el('p', { class: 'step-text' }, t));
-    stepsBar.appendChild(s);
+  return wrap;
+}
+
+function buildProductCard(p) {
+  if (p.featured) return buildR4LCard();
+
+  var card = el('div', { class:'product', id:p.id });
+
+  var top = el('div', { class:'product-top' });
+  top.appendChild(el('div', { class:'product-icon', style:'background:'+p.iconBg }, p.icon));
+  top.appendChild(el('span', { class:'p-badge '+p.badge }, p.badgeLabel));
+  card.appendChild(top);
+
+  card.appendChild(el('div', { class:'product-num' }, 'Product ' + p.num));
+  card.appendChild(el('div', { class:'product-name' }, p.name));
+  card.appendChild(el('div', { class:'product-desc' }, p.desc));
+  card.appendChild(el('div', { class:'product-meta' }, p.meta));
+
+  var actions = el('div', { class:'product-actions' });
+  if (p.visitBtn) {
+    actions.appendChild(el('a', { class:'btn-visit', href:p.visitBtn.href, target:'_blank' },
+      p.visitBtn.label));
+  }
+  var label = p.interestLabel || '✉ I\'m Interested';
+  var productLabel = p.schoolMode ? p.name + ' (School Deployment)' : p.name;
+  var btn = el('button', { class:'btn-interest' }, label);
+  btn.addEventListener('click', function() { openLeadSheet(productLabel); });
+  actions.appendChild(btn);
+  card.appendChild(actions);
+
+  return card;
+}
+
+function buildR4LCard() {
+  var card = el('div', { class:'product featured', id:'r4l' });
+
+  var top = el('div', { class:'product-top' });
+  top.appendChild(el('div', { class:'product-icon', style:'background:rgba(249,115,22,.12)' }, '🚀'));
+  top.appendChild(el('span', { class:'p-badge fire' }, 'Pre-Booking Open'));
+  card.appendChild(top);
+
+  card.appendChild(el('div', { class:'product-num' }, 'Product 09'));
+  card.appendChild(el('div', { class:'product-name' }, 'Ready4Launch — TextToApp'));
+  card.appendChild(el('div', { class:'product-desc' },
+    'Type one line. Get a complete app. Converts text to Word docs, generates presentations, and builds any app from a single prompt — no coding, no team, no waiting.'));
+
+  var price = el('div', { class:'r4l-price' });
+  var row = el('div', { class:'r4l-row' });
+  row.appendChild(el('span', { class:'r4l-amount' }, '₹499'));
+  var det = el('div', {});
+  det.appendChild(el('div', { class:'r4l-label' }, 'Pre-booking price'));
+  det.appendChild(el('div', { class:'r4l-orig' }, '₹1,999 at launch'));
+  row.appendChild(det);
+  price.appendChild(row);
+  price.appendChild(el('div', { class:'r4l-save' }, 'You save ₹1,500 — 75% off launch'));
+  card.appendChild(price);
+
+  var grid = el('div', { class:'r4l-grid' });
+  [['5','Day pilot'],['2','Prompts/day'],['3','Core features'],['~4–5','Days to launch']].forEach(function(s) {
+    var c = el('div', { class:'r4l-cell' });
+    c.appendChild(el('div', { class:'r4l-cell-n' }, s[0]));
+    c.appendChild(el('div', { class:'r4l-cell-l' }, s[1]));
+    grid.appendChild(c);
   });
-  body.appendChild(stepsBar);
+  card.appendChild(grid);
 
-  // Products catalogue
-  body.appendChild(buildSection('01–07 · Tools Available', 'The Product Catalogue',
-    'Express interest in any product below. I\'ll customise it for your use case and get in touch.'));
-  const cards = el('div', { class: 'cards' });
-  products.forEach(p => cards.appendChild(buildCard(p)));
+  card.appendChild(el('div', { class:'product-meta', style:'margin-bottom:14px' },
+    'API costs on me during pilot — slots are limited. Those who\'ve seen it are already asking when it ships.'));
+
+  var btn = el('button', { class:'btn-preorder' }, '🔥 Pre-Book My Pilot Slot — ₹499');
+  btn.addEventListener('click', function() {
+    openLeadSheet('Ready4Launch — TextToApp (Pilot Pre-Booking ₹499)');
+  });
+  card.appendChild(btn);
+
+  return card;
+}
+
+function buildDivider(label) {
+  var d = el('div', { class:'section-divider' });
+  d.appendChild(el('span', { class:'divider-label' }, label));
+  return d;
+}
+
+function buildFooter() {
+  var f = el('div', { class:'footer' });
+  f.appendChild(el('div', { class:'footer-brand' }, 'AI for EveryOne'));
+  f.appendChild(el('div', { class:'footer-exp' },
+    'Built by a non-coder with 22 years in IT\nTechMahindra · Wipro · IBM · Kyndryl · PwC'));
+  var badges = el('div', { class:'footer-badges' });
+  ['Workshop','AI Tools','Zero Code','Built with AI','100% Real'].forEach(function(b) {
+    badges.appendChild(el('span', { class:'f-badge' }, b));
+  });
+  f.appendChild(badges);
+  var note = el('div', { class:'footer-note' });
+  note.innerHTML = 'All products are real, tested, and working. Every one was built solo using AI.<br>Replace <strong>91XXXXXXXXXX</strong> in config.js with your WhatsApp number.';
+  f.appendChild(note);
+  return f;
+}
+
+// ── REGISTRATION BOTTOM SHEET ─────────────────────────────────────────────────
+
+var regSheet;
+
+function buildRegSheet() {
+  regSheet = el('div', { id:'reg-sheet', class:'sheet' });
+
+  regSheet.appendChild(el('div', { class:'sheet-handle', id:'reg-handle' }));
+
+  var hdr = el('div', { class:'sheet-header' });
+  var back = el('button', { class:'sheet-back', id:'reg-back' });
+  back.innerHTML = '← Back';
+  back.addEventListener('click', regBack);
+  hdr.appendChild(back);
+  hdr.appendChild(el('div', { class:'sheet-title', id:'reg-title' }, 'Choose Your Batch'));
+  var dots = el('div', { class:'sheet-steps', id:'reg-dots' });
+  for (var i = 0; i < 3; i++) {
+    dots.appendChild(el('div', { class:'sheet-step-dot' + (i===0?' active':'') }));
+  }
+  hdr.appendChild(dots);
+  regSheet.appendChild(hdr);
+
+  regSheet.appendChild(el('div', { id:'reg-body', class:'sheet-body' }));
+  regSheet.appendChild(el('div', { id:'reg-foot', class:'sheet-foot' }));
+
+  document.body.appendChild(regSheet);
+  initDragDismiss(regSheet, closeRegSheet);
+}
+
+function openRegSheet(plan) {
+  ST.plan = plan;
+  ST.batch = null;
+  ST.reg = {};
+  ST.payId = null;
+  ST.regStep = 1;
+  renderRegStep();
+  open_(regSheet);
+}
+
+function closeRegSheet() { close_(regSheet); }
+
+function regBack() {
+  if (ST.regStep <= 1) { closeRegSheet(); return; }
+  ST.regStep--;
+  renderRegStep();
+}
+
+function renderRegStep() {
+  updateRegDots();
+  if (ST.regStep === 1) renderRegStep1();
+  else if (ST.regStep === 2) renderRegStep2();
+  else if (ST.regStep === 3) renderRegStep3();
+  else if (ST.regStep === 4) renderRegStep4();
+  document.getElementById('reg-body').scrollTop = 0;
+}
+
+function updateRegDots() {
+  var dots = document.querySelectorAll('#reg-dots .sheet-step-dot');
+  dots.forEach(function(d, i) {
+    d.classList.remove('active','done');
+    if (i+1 < ST.regStep) d.classList.add('done');
+    else if (i+1 === ST.regStep) d.classList.add('active');
+  });
+  var titles = ['Choose Your Batch','Your Details','Complete Payment',''];
+  document.getElementById('reg-title').textContent = titles[ST.regStep-1] || '';
+  document.getElementById('reg-back').style.visibility = ST.regStep >= 4 ? 'hidden' : 'visible';
+}
+
+function planPillHtml(plan) {
+  return '<div class="sheet-plan-pill">' +
+    '<div class="spp-dot" style="background:'+plan.color+'"></div>' +
+    '<div class="spp-name">' + plan.name + '</div>' +
+    '<div class="spp-price">₹' + plan.price.toLocaleString('en-IN') + '</div>' +
+    '<button class="spp-change" onclick="closeRegSheet()">Change</button>' +
+  '</div>';
+}
+
+// Step 1: Batch
+function renderRegStep1() {
+  var body = document.getElementById('reg-body');
+  var foot = document.getElementById('reg-foot');
+  body.innerHTML = planPillHtml(ST.plan);
+
+  var cards = el('div', { class:'batch-cards' });
+  BATCHES.forEach(function(b) {
+    var card = el('div', { class:'batch-card' + (ST.batch && ST.batch.id===b.id?' sel':'') });
+    var icon = el('div', { class:'batch-icon' }, b.icon);
+    var info = el('div', { class:'batch-info' });
+    info.appendChild(el('div', { class:'batch-name' }, b.name));
+    info.appendChild(el('div', { class:'batch-days' }, b.days));
+    info.appendChild(el('div', { class:'batch-time' }, b.time));
+    info.appendChild(el('div', { class:'batch-desc' }, b.desc));
+    var chk = el('div', { class:'batch-chk' }, '✓');
+    card.appendChild(icon); card.appendChild(info); card.appendChild(chk);
+    card.addEventListener('click', function() {
+      document.querySelectorAll('#reg-body .batch-card').forEach(function(c) { c.classList.remove('sel'); });
+      card.classList.add('sel');
+      ST.batch = b;
+      document.getElementById('batch-err').style.display = 'none';
+    });
+    cards.appendChild(card);
+  });
   body.appendChild(cards);
+  body.appendChild(el('div', { id:'batch-err', class:'err-box' }, 'Please select a batch to continue.'));
 
-  body.appendChild(el('div', { class: 'divider' }));
-
-  // Custom dev
-  body.appendChild(buildSection('08 · Custom Development',
-    'You imagine it. I\'ll build it and hand it over.',
-    'No lock-in. No ongoing dependency. Your idea, built with AI, owned by you.'));
-  const devCards = el('div', { class: 'cards' });
-  const devCard  = el('div', { class: 'card dev-card fullwidth', id: 'dev' });
-  const devTop   = el('div', { class: 'card-top' });
-  devTop.appendChild(el('div', { class: 'card-icon', style: 'background:rgba(255,255,255,0.1)' }, '⚙️'));
-  devTop.appendChild(el('span', { class: 'badge hot' }, 'Ping Me'));
-  devCard.appendChild(devTop);
-  devCard.appendChild(el('p', { class: 'card-name' }, 'Custom App Development & Handover'));
-  devCard.appendChild(el('p', { class: 'card-desc' },
-    'Have a specific problem you want solved? Bring your idea — I\'ll build the app, test it, and hand it over completely. Website, Android APK, automation bot, or AI agent — scoped to your exact need. No coding knowledge required from your side.'));
-  devCard.appendChild(el('p', { class: 'card-meta' },
-    'Web apps · Android APKs · Automation bots · AI agents · Dashboards · Any domain'));
-  const devActions = el('div', { class: 'card-actions' });
-  const devCta = el('button', { class: 'btn btn-interest' }, '✉ Let\'s Discuss Your Idea');
-  devCta.addEventListener('click', () => openModal('Custom App Development'));
-  devActions.appendChild(devCta);
-  devCard.appendChild(devActions);
-  devCards.appendChild(devCard);
-  body.appendChild(devCards);
-
-  body.appendChild(el('div', { class: 'divider' }));
-
-  // Ready4Launch
-  body.appendChild(buildSection('09 · The Big One 🔥', 'Ready4Launch — TextToApp',
-    'One line of text. A complete, working app. Pre-booking now open for the pilot batch.'));
-  const r4lCards = el('div', { class: 'cards' });
-  const r4l = el('div', { class: 'card featured fullwidth', id: 'r4l' });
-  const r4lTop = el('div', { class: 'card-top' });
-  r4lTop.appendChild(el('div', { class: 'card-icon' }, '🚀'));
-  r4lTop.appendChild(el('span', { class: 'badge preorder' }, 'Pre-Booking Open'));
-  r4l.appendChild(r4lTop);
-  r4l.appendChild(el('p', { class: 'card-name', style: 'font-size:1.2rem' }, 'Ready4Launch — TextToApp'));
-  r4l.appendChild(el('p', { class: 'card-desc' },
-    'Type one line. Get a complete app. This is not a concept — it\'s almost done. It converts any text to a professional Word document. It generates full presentations. And it builds any app from a single prompt — no coding, no team, no waiting.'));
-  r4l.appendChild(el('p', { class: 'card-desc', style: 'margin-top:-0.25rem' },
-    'For technical users: fill in a few details and your entire stack is ready in minutes.'));
-
-  const price = el('div', { class: 'featured-price' });
-  const priceRow = el('div', { class: 'price-row' });
-  priceRow.appendChild(el('span', { class: 'price-main' }, '₹499'));
-  const pd = el('div', {});
-  pd.appendChild(el('p', { class: 'price-label' }, 'Pre-booking price'));
-  pd.appendChild(el('p', { class: 'price-old' }, '₹1,999 at launch'));
-  priceRow.appendChild(pd);
-  price.appendChild(priceRow);
-  price.appendChild(el('span', { class: 'price-saving' }, 'You save ₹1,500 — 75% off launch price'));
-  r4l.appendChild(price);
-
-  const pilotSteps = el('div', { class: 'pilot-steps' });
-  [['5','Day pilot access'],['2','Prompts/feature per day'],['3','Core features to explore'],['~4–5','Days to launch']].forEach(([n, l]) => {
-    const s = el('div', { class: 'pilot-step' });
-    s.appendChild(el('p', { class: 'ps-num' }, n));
-    s.appendChild(el('p', { class: 'ps-label' }, l));
-    pilotSteps.appendChild(s);
+  foot.innerHTML = '';
+  var btn = el('button', { class:'btn btn-primary' }, 'Continue →');
+  btn.addEventListener('click', function() {
+    if (!ST.batch) { document.getElementById('batch-err').style.display='block'; return; }
+    ST.regStep = 2;
+    renderRegStep();
   });
-  r4l.appendChild(pilotSteps);
-  r4l.appendChild(el('p', { class: 'card-meta', style: 'margin-bottom:1rem' },
-    'Note: API costs are on me during the pilot — which is why slots are limited. This is not pressure, it\'s just transparency. Those who\'ve seen it are already asking when it\'s ready.'));
-
-  const preOrderBtn = el('button', { class: 'btn btn-preorder' }, '🔥 Pre-Book My Pilot Slot — ₹499');
-  preOrderBtn.addEventListener('click', () => openModal('Ready4Launch — TextToApp (Pilot Pre-Booking ₹499)'));
-  r4l.appendChild(preOrderBtn);
-  r4lCards.appendChild(r4l);
-  body.appendChild(r4lCards);
-
-  // QR section
-  const qrSec = el('div', { class: 'qr-section', id: 'qr-gen' });
-  qrSec.appendChild(el('h3', {}, '📲 Generate Your QR Code'));
-  qrSec.appendChild(el('p', {}, 'Once you\'ve hosted this page, paste the URL below to generate the QR code for your printout, banner, or visiting card.'));
-  const qrRow  = el('div', { class: 'qr-input-row' });
-  const qrInp  = el('input', { class: 'qr-input', type: 'url', id: 'qr-url', placeholder: 'https://your-hosted-url.com' });
-  const qrBtn  = el('button', { class: 'btn-gen' }, 'Generate QR');
-  qrBtn.addEventListener('click', generateQR);
-  qrRow.appendChild(qrInp); qrRow.appendChild(qrBtn);
-  qrSec.appendChild(qrRow);
-  const qrOut  = el('div', { id: 'qr-output' });
-  qrOut.appendChild(el('div', { id: 'qr-canvas' }));
-  qrOut.appendChild(el('p', {}, 'Scan to open your product catalogue'));
-  const dlBtn  = el('button', { class: 'btn-dl' }, '⬇ Download QR Code');
-  dlBtn.addEventListener('click', downloadQR);
-  qrOut.appendChild(dlBtn);
-  qrSec.appendChild(qrOut);
-  body.appendChild(qrSec);
-
-  // Footer
-  const footer = el('footer', {});
-  footer.innerHTML = `
-    <strong>AI-Powered Tools</strong> · Built by a non-coder with 22 years in IT<br/>
-    TechMahindra · Wipro · IBM · Kyndryl · PwC<br/><br/>
-    <span style="font-size:11px;">All products are real, tested, and working. Every one was built solo using AI.</span>
-  `;
-  body.appendChild(footer);
-
-  // Build modal last (appends to body)
-  buildModal();
+  foot.appendChild(btn);
 }
 
-// ── QR logic ──────────────────────────────────────────────────────────────────
-function generateQR() {
-  const url = document.getElementById('qr-url').value.trim();
-  if (!url) { alert('Please enter a URL first.'); return; }
-  const container = document.getElementById('qr-canvas');
-  container.innerHTML = '';
-  new QRCode(container, { text: url, width: 200, height: 200, colorDark: '#0f1117', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.H });
-  document.getElementById('qr-output').style.display = 'block';
+// Step 2: Registration form
+function renderRegStep2() {
+  var body = document.getElementById('reg-body');
+  var foot = document.getElementById('reg-foot');
+
+  body.innerHTML = planPillHtml(ST.plan) +
+    '<div class="form-row"><label class="f-label" for="r-name">Full Name <span>*</span></label>' +
+    '<input class="f-input" type="text" id="r-name" placeholder="Your full name" autocomplete="name" value="' + (ST.reg.name||'') + '"></div>' +
+    '<div class="form-row"><label class="f-label" for="r-email">Email Address <span>*</span></label>' +
+    '<input class="f-input" type="email" id="r-email" placeholder="you@email.com" autocomplete="email" value="' + (ST.reg.email||'') + '"></div>' +
+    '<div class="form-row"><label class="f-label" for="r-phone">WhatsApp / Phone <span>*</span></label>' +
+    '<input class="f-input" type="tel" id="r-phone" placeholder="+91 98765 43210" autocomplete="tel" value="' + (ST.reg.phone||'') + '"></div>' +
+    '<div id="reg-form-err" class="err-box">Please fill in all required fields.</div>';
+
+  foot.innerHTML = '';
+  var btn = el('button', { class:'btn btn-primary' }, 'Proceed to Payment →');
+  btn.addEventListener('click', function() {
+    var name  = document.getElementById('r-name').value.trim();
+    var email = document.getElementById('r-email').value.trim();
+    var phone = document.getElementById('r-phone').value.trim();
+    var err   = document.getElementById('reg-form-err');
+    ['r-name','r-email','r-phone'].forEach(function(id) { document.getElementById(id).classList.remove('err'); });
+    var ok = true;
+    if (!name)  { document.getElementById('r-name').classList.add('err');  ok=false; }
+    if (!email) { document.getElementById('r-email').classList.add('err'); ok=false; }
+    if (!phone) { document.getElementById('r-phone').classList.add('err'); ok=false; }
+    if (!ok) { err.style.display='block'; return; }
+    err.style.display='none';
+    ST.reg = { name:name, email:email, phone:phone };
+    ST.regStep = 3;
+    renderRegStep();
+  });
+  foot.appendChild(btn);
 }
 
-function downloadQR() {
-  const canvas = document.querySelector('#qr-canvas canvas');
-  if (!canvas) { alert('Generate a QR code first.'); return; }
-  const link = document.createElement('a');
-  link.download = 'product-catalogue-qr.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+// Step 3: Payment
+function renderRegStep3() {
+  var plan  = ST.plan;
+  var batch = ST.batch;
+  var body  = document.getElementById('reg-body');
+  var foot  = document.getElementById('reg-foot');
+
+  body.innerHTML =
+    '<div class="pay-card">' +
+      '<div class="pay-label">Amount to Pay</div>' +
+      '<div class="pay-amount">₹' + plan.price.toLocaleString('en-IN') + '</div>' +
+      '<div class="pay-plan">' + plan.track + ' – ' + plan.name +
+        (batch ? ' · ' + batch.name : '') + '</div>' +
+    '</div>' +
+    '<div class="pay-methods"><span>Accepts &nbsp;</span>' +
+    ['UPI','PhonePe','GPay','Cards','Net Banking'].map(function(m) {
+      return '<span class="pay-tag">' + m + '</span>';
+    }).join('') + '</div>' +
+    '<div id="pay-err" class="err-box">Payment not completed. Please try again.</div>';
+
+  foot.innerHTML = '';
+  var btn = el('button', { class:'btn btn-primary', id:'pay-btn' }, 'Pay Securely →');
+  btn.addEventListener('click', openRazorpay);
+  var badge = el('div', { class:'rzp-badge' });
+  badge.innerHTML = '🔒 &nbsp;Secured by Razorpay';
+  foot.appendChild(btn);
+  foot.appendChild(badge);
+}
+
+// Step 4: Thank you
+function renderRegStep4() {
+  var r    = ST.reg;
+  var plan = ST.plan;
+  var batch = ST.batch;
+
+  document.getElementById('reg-body').innerHTML =
+    '<div class="ty-wrap">' +
+      '<div class="ty-icon">✓</div>' +
+      '<div class="ty-title">Payment Confirmed!</div>' +
+      '<p class="ty-sub">Welcome to <strong>' + plan.name + '</strong>' +
+        (batch ? ' — ' + batch.name : '') + '!<br>' +
+        'We\'ll reach you on WhatsApp at <strong>' + r.phone + '</strong>.</p>' +
+      '<div class="summary">' +
+        sRow('Name', r.name) + sRow('Email', r.email) + sRow('WhatsApp', r.phone) +
+        sRow('Plan', '<span style="color:'+plan.color+';font-weight:700">'+plan.name+'</span>') +
+        (batch ? sRow('Batch', batch.name + '<br><span style="font-size:11px;color:var(--muted)">'+batch.days+' · '+batch.time+'</span>') : '') +
+        sRow('Duration', plan.dur) +
+        sRow('Amount', '₹'+plan.price.toLocaleString('en-IN')) +
+        (ST.payId ? sRow('Payment ID', '<span style="font-size:11px;word-break:break-all">'+ST.payId+'</span>') : '') +
+        sRow('Status', '<span class="s-pill">Confirmed ✓</span>') +
+      '</div>' +
+      '<p style="font-size:13px;color:var(--muted);line-height:1.6">Questions? Reach out on WhatsApp or email. We confirm your seat within 24 hours.</p>' +
+    '</div>';
+
+  document.getElementById('reg-foot').innerHTML = '';
+  document.getElementById('reg-back').style.visibility = 'hidden';
+}
+
+function sRow(k, v) {
+  return '<div class="s-row"><span class="s-key">'+k+'</span><span class="s-val">'+v+'</span></div>';
+}
+
+// ── LEAD CAPTURE SHEET ─────────────────────────────────────────────────────────
+
+var leadSheet;
+
+function buildLeadSheet() {
+  leadSheet = el('div', { id:'lead-sheet', class:'sheet' });
+  leadSheet.appendChild(el('div', { class:'sheet-handle' }));
+
+  var hdr = el('div', { class:'sheet-header' });
+  var back = el('button', { class:'sheet-back' }, '✕ Close');
+  back.addEventListener('click', closeLeadSheet);
+  hdr.appendChild(back);
+  hdr.appendChild(el('div', { class:'sheet-title', id:'lead-product-title' }, ''));
+  leadSheet.appendChild(hdr);
+
+  var body = el('div', { class:'sheet-body', id:'lead-body' });
+  body.appendChild(buildLeadForm());
+  leadSheet.appendChild(body);
+
+  var foot = el('div', { class:'sheet-foot', id:'lead-foot' });
+  leadSheet.appendChild(foot);
+
+  document.body.appendChild(leadSheet);
+  initDragDismiss(leadSheet, closeLeadSheet);
+}
+
+function buildLeadForm() {
+  var f = el('div', { id:'lead-form-wrap' });
+  f.innerHTML =
+    '<div id="lead-success" class="lead-success">' +
+      '<div class="ls-icon">✓</div>' +
+      '<h3>Got it — I\'ll be in touch!</h3>' +
+      '<p>Your details are saved. I\'ll review and reach out within 24 hours.</p>' +
+      '<button class="btn-close-lead" onclick="closeLeadSheet()">Close</button>' +
+    '</div>' +
+    '<div id="lead-form-inner">' +
+      '<div class="form-row"><label class="f-label" for="l-name">Your Name <span>*</span></label>' +
+      '<input class="f-input" type="text" id="l-name" placeholder="e.g. Priya Sharma" autocomplete="name"></div>' +
+      '<div class="form-row"><label class="f-label" for="l-phone">WhatsApp / Phone <span>*</span></label>' +
+      '<input class="f-input" type="tel" id="l-phone" placeholder="10-digit mobile number" autocomplete="tel"></div>' +
+      '<div class="form-row"><label class="f-label" for="l-email">Email Address</label>' +
+      '<input class="f-input" type="email" id="l-email" placeholder="optional" autocomplete="email">' +
+      '<p class="f-hint">Optional — for follow-up details</p></div>' +
+      '<div class="form-row"><label class="f-label" for="l-msg">What do you need?</label>' +
+      '<textarea class="f-textarea" id="l-msg" placeholder="Tell me about your use case or what you\'d like to achieve…"></textarea></div>' +
+      '<div id="lead-err" class="err-box">Please enter your name and a valid 10-digit number.</div>' +
+    '</div>';
+  return f;
+}
+
+function openLeadSheet(productName) {
+  document.getElementById('lead-product-title').textContent = productName;
+  document.getElementById('lead-success').style.display = 'none';
+  document.getElementById('lead-form-inner').style.display = 'block';
+  ['l-name','l-phone','l-email','l-msg'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) { el.value = ''; el.classList.remove('err'); }
+  });
+  document.getElementById('lead-err').style.display = 'none';
+
+  var foot = document.getElementById('lead-foot');
+  foot.innerHTML = '';
+  var btn = el('button', { class:'btn btn-primary', id:'lead-submit' }, '✉ Send My Interest');
+  btn.addEventListener('click', submitLead);
+  foot.appendChild(btn);
+
+  open_(leadSheet);
+  setTimeout(function() {
+    var inp = document.getElementById('l-name');
+    if (inp) inp.focus();
+  }, 350);
+}
+
+function closeLeadSheet() { close_(leadSheet); }
+
+function submitLead() {
+  var name  = document.getElementById('l-name').value.trim();
+  var phone = document.getElementById('l-phone').value.trim().replace(/\s/g,'');
+  var email = document.getElementById('l-email').value.trim();
+  var msg   = document.getElementById('l-msg').value.trim();
+  var err   = document.getElementById('lead-err');
+
+  document.getElementById('l-name').classList.remove('err');
+  document.getElementById('l-phone').classList.remove('err');
+  var ok = true;
+  if (!name)              { document.getElementById('l-name').classList.add('err');  ok=false; }
+  if (!/^\d{10}$/.test(phone)) { document.getElementById('l-phone').classList.add('err'); ok=false; }
+  if (!ok) { err.style.display='block'; return; }
+  err.style.display='none';
+
+  var btn = document.getElementById('lead-submit');
+  btn.innerHTML = '<div class="spinner"></div> Sending…';
+  btn.disabled = true;
+
+  var payload = {
+    product   : document.getElementById('lead-product-title').textContent,
+    name      : name,
+    phone     : phone,
+    email     : email,
+    message   : msg,
+    timestamp : new Date().toLocaleString('en-IN', { timeZone:'Asia/Kolkata' }),
+  };
+
+  var sendFn = (LEADS_URL && LEADS_URL !== 'YOUR_LEADS_SCRIPT_URL')
+    ? fetch(LEADS_URL + '?' + new URLSearchParams(payload), { mode:'no-cors' })
+    : Promise.resolve();
+
+  sendFn
+    .catch(function() {})
+    .finally(function() {
+      document.getElementById('lead-form-inner').style.display = 'none';
+      document.getElementById('lead-success').style.display = 'block';
+      document.getElementById('lead-foot').innerHTML = '';
+    });
+
+  console.table(payload); // dev fallback
+}
+
+// ── Sheet open/close helpers ──────────────────────────────────────────────────
+function open_(sheet) {
+  document.querySelectorAll('.sheet').forEach(function(s) { s.classList.remove('open'); });
+  document.getElementById('backdrop').classList.add('open');
+  sheet.classList.add('open');
+  document.body.classList.add('no-scroll');
+}
+
+function close_(sheet) {
+  sheet.classList.remove('open');
+  document.getElementById('backdrop').classList.remove('open');
+  document.body.classList.remove('no-scroll');
+}
+
+function closeAllSheets() {
+  document.querySelectorAll('.sheet').forEach(function(s) { s.classList.remove('open'); });
+  document.getElementById('backdrop').classList.remove('open');
+  document.body.classList.remove('no-scroll');
+}
+
+// ── Drag-to-dismiss ───────────────────────────────────────────────────────────
+function initDragDismiss(sheet, closeFn) {
+  var handle = sheet.querySelector('.sheet-handle');
+  var startY = 0, isDragging = false;
+
+  function onStart(e) {
+    isDragging = true;
+    startY = (e.touches ? e.touches[0].clientY : e.clientY);
+    sheet.style.transition = 'none';
+  }
+  function onMove(e) {
+    if (!isDragging) return;
+    var dy = (e.touches ? e.touches[0].clientY : e.clientY) - startY;
+    if (dy > 0) sheet.style.transform = 'translateY(' + dy + 'px)';
+  }
+  function onEnd(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    sheet.style.transition = '';
+    var dy = (e.changedTouches ? e.changedTouches[0].clientY : e.clientY) - startY;
+    if (dy > 100) { sheet.style.transform = ''; closeFn(); }
+    else { sheet.style.transform = ''; }
+  }
+  handle.addEventListener('touchstart', onStart, { passive:true });
+  handle.addEventListener('touchmove',  onMove,  { passive:true });
+  handle.addEventListener('touchend',   onEnd);
+}
+
+// ── Razorpay ──────────────────────────────────────────────────────────────────
+function openRazorpay() {
+  var plan  = ST.plan;
+  var batch = ST.batch;
+  var r     = ST.reg;
+  var btn   = document.getElementById('pay-btn');
+  var errEl = document.getElementById('pay-err');
+
+  errEl.style.display = 'none';
+
+  if (typeof Razorpay === 'undefined') {
+    errEl.innerHTML = 'Payment gateway failed to load. Check your internet and refresh.';
+    errEl.style.display = 'block';
+    return;
+  }
+  if (!RAZOR_KEY) {
+    errEl.innerHTML = 'Razorpay not configured. Add RAZORPAY_KEY_ID to GitHub repository secrets.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  btn.classList.add('loading');
+  btn.innerHTML = '<div class="spinner"></div>&nbsp; Opening payment…';
+  btn.disabled = true;
+
+  var options = {
+    key:         RAZOR_KEY,
+    amount:      plan.price * 100,
+    currency:    'INR',
+    name:        'AI for EveryOne Workshop',
+    description: plan.track + ' – ' + plan.name + (batch ? ' · ' + batch.name : ''),
+    prefill:     { name:r.name, email:r.email, contact:r.phone },
+    notes:       { plan:plan.track+'–'+plan.name, batch:batch?batch.name:'' },
+    theme:       { color:plan.color },
+    handler: function(resp) {
+      ST.payId = resp.razorpay_payment_id;
+      var payload = {
+        name:r.name, email:r.email, phone:r.phone,
+        plan:plan.track+'–'+plan.name,
+        batch:batch ? batch.name+'('+batch.days+')' : '',
+        amount:plan.price, payment_id:resp.razorpay_payment_id,
+        timestamp:new Date().toISOString(),
+      };
+      saveToSheets(payload).catch(function(e) { console.error('Sheets:', e); });
+      saveToGitHub(payload).catch(function(e)  { console.error('GitHub:', e); });
+      ST.regStep = 4;
+      renderRegStep();
+    },
+    modal: {
+      ondismiss: function() {
+        btn.classList.remove('loading');
+        btn.innerHTML = 'Pay Securely →';
+        btn.disabled = false;
+      }
+    },
+  };
+
+  var rzp = new Razorpay(options);
+  rzp.on('payment.failed', function(resp) {
+    btn.classList.remove('loading');
+    btn.innerHTML = 'Pay Securely →';
+    btn.disabled = false;
+    errEl.innerHTML = 'Payment failed — ' + (resp.error.description || 'please try again.');
+    errEl.style.display = 'block';
+  });
+  rzp.open();
+}
+
+// ── Google Sheets save (workshop) ─────────────────────────────────────────────
+function saveToSheets(data) {
+  if (!SHEET_URL) { console.warn('SHEET_URL not set'); return Promise.resolve(); }
+  return fetch(SHEET_URL + '?' + new URLSearchParams(data), { mode:'no-cors' });
+}
+
+// ── GitHub CSV save ───────────────────────────────────────────────────────────
+async function saveToGitHub(data) {
+  if (!GH_TOKEN) { console.warn('GH_TOKEN not set'); return; }
+  var today = new Date().toLocaleDateString('en-CA', { timeZone:'Asia/Kolkata' });
+  var path  = 'registrations/' + today + '.csv';
+  var url   = 'https://api.github.com/repos/' + GH_REPO + '/contents/' + path;
+  var hdrs  = {
+    'Authorization':'Bearer ' + GH_TOKEN,
+    'Accept':'application/vnd.github+json',
+    'Content-Type':'application/json',
+    'X-GitHub-Api-Version':'2022-11-28',
+  };
+  var sha = '', existing = '';
+  try {
+    var r = await fetch(url, { headers:hdrs });
+    if (r.ok) { var d = await r.json(); sha = d.sha; existing = decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))); }
+  } catch(e) {}
+  function cell(v) { return '"' + String(v||'').replace(/"/g,'""') + '"'; }
+  var row = [new Date().toLocaleString('en-IN',{timeZone:'Asia/Kolkata'}),
+    data.name,data.email,data.phone,data.plan,data.batch,data.amount,data.payment_id].map(cell).join(',');
+  var HEADER = '"Timestamp (IST)","Name","Email","Phone","Plan","Batch","Amount (INR)","Razorpay Payment ID"';
+  var csv = (existing || HEADER+'\n') + row + '\n';
+  var body = { message:'reg: '+(data.name||'unknown')+'|'+today, content:btoa(unescape(encodeURIComponent(csv))) };
+  if (sha) body.sha = sha;
+  try {
+    var res = await fetch(url, { method:'PUT', headers:hdrs, body:JSON.stringify(body) });
+    if (!res.ok) console.error('GitHub PUT failed:', await res.text());
+  } catch(e) { console.error('GitHub error:', e); }
+}
+
+// ── Scroll behaviour ──────────────────────────────────────────────────────────
+function scrollToSection(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  var offset = 56;
+  window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - offset, behavior:'smooth' });
+}
+
+function initScrollBehavior() {
+  var hero    = document.querySelector('.hero');
+  var nav     = document.getElementById('top-nav');
+  var prog    = document.getElementById('progress');
+  var wsEl    = document.getElementById('workshop');
+  var toolsEl = document.getElementById('tools');
+  var tabs    = document.querySelectorAll('.nav-tab');
+  var fadeEls = document.querySelectorAll('.fade-in');
+
+  var io = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold:0.1 });
+  fadeEls.forEach(function(el) { io.observe(el); });
+
+  window.addEventListener('scroll', function() {
+    var scrollY   = window.scrollY;
+    var docH      = document.body.scrollHeight - window.innerHeight;
+    var heroH     = hero.offsetHeight;
+
+    // Progress bar
+    prog.style.width = (docH > 0 ? (scrollY / docH * 100) : 0) + '%';
+
+    // Sticky nav
+    if (scrollY > heroH * 0.7) nav.classList.add('visible');
+    else nav.classList.remove('visible');
+
+    // Active tab
+    var toolsTop = toolsEl.getBoundingClientRect().top;
+    tabs.forEach(function(t) { t.classList.remove('active'); });
+    if (toolsTop < window.innerHeight * 0.4) tabs[1].classList.add('active');
+    else tabs[0].classList.add('active');
+
+  }, { passive:true });
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
