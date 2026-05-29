@@ -3,139 +3,317 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Setup Guide — Google Sheets Lead Capture</title>
+<title>Setup Guide — AI for EveryOne</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Outfit',sans-serif;background:#f5f4f0;color:#0f1117;font-size:15px;line-height:1.6;}
-.hero{background:#0f1117;color:#fff;padding:2.5rem 1.5rem;text-align:center;}
+body{font-family:'Inter',sans-serif;background:#06060f;color:#f1f5f9;font-size:15px;line-height:1.6;}
+.hero{background:linear-gradient(135deg,#0d0d1a,#131325);padding:2.5rem 1.5rem;text-align:center;
+  border-bottom:1px solid rgba(255,255,255,0.07);}
 .hero h1{font-family:'Playfair Display',serif;font-size:1.8rem;margin-bottom:0.5rem;}
-.hero p{font-size:14px;color:rgba(255,255,255,0.6);max-width:480px;margin:0 auto;}
-.container{max-width:680px;margin:0 auto;padding:2rem 1.25rem;}
-.step-card{background:#fff;border-radius:14px;border:1px solid #ece9e2;box-shadow:0 2px 12px rgba(0,0,0,0.06);margin-bottom:1.25rem;overflow:hidden;}
-.step-head{background:#0f1117;color:#fff;padding:0.9rem 1.25rem;display:flex;align-items:center;gap:12px;}
-.step-num{width:28px;height:28px;border-radius:50%;background:#e85d26;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.step-head h2{font-size:14px;font-weight:600;}
-.step-body{padding:1.25rem;}
-.step-body p{font-size:13.5px;color:#3a3d4a;margin-bottom:0.75rem;}
-.step-body ul{padding-left:1.25rem;font-size:13.5px;color:#3a3d4a;}
-.step-body ul li{margin-bottom:0.4rem;}
-pre{background:#0f1117;color:#e2e8f0;border-radius:10px;padding:1.1rem 1.25rem;font-size:12.5px;overflow-x:auto;margin:0.75rem 0;line-height:1.7;}
-pre .c{color:#64748b;}
-pre .k{color:#f09060;}
-pre .s{color:#4ade80;}
-.copy-wrap{position:relative;}
-.copy-btn{position:absolute;top:10px;right:10px;background:rgba(255,255,255,0.1);color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:'Outfit',sans-serif;}
-.copy-btn:hover{background:rgba(255,255,255,0.2);}
-.highlight-box{background:#fff8f0;border:1px solid #fcd9b0;border-radius:10px;padding:1rem 1.1rem;margin:0.75rem 0;font-size:13px;color:#7c4400;}
-.highlight-box strong{color:#e85d26;}
-.done-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1rem 1.1rem;margin:0.75rem 0;font-size:13px;color:#14532d;}
-.done-box strong{color:#15803d;}
-a{color:#1a56db;}
+.hero p{font-size:14px;color:#94a3b8;max-width:520px;margin:0 auto;}
+.container{max-width:700px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+
+/* Data flow diagram */
+.flow{display:flex;flex-direction:column;gap:0;margin:2rem 0;}
+.flow-row{display:flex;align-items:center;gap:0;}
+.flow-box{background:#0d0d1a;border:1px solid rgba(255,255,255,0.1);border-radius:10px;
+  padding:12px 18px;font-size:13px;font-weight:600;flex:1;text-align:center;}
+.flow-box.razorpay{border-color:rgba(99,102,241,.4);color:#a5b4fc;}
+.flow-box.github{border-color:rgba(16,185,129,.4);color:#34d399;}
+.flow-box.sheets{border-color:rgba(245,158,11,.4);color:#fcd34d;}
+.flow-box.page{border-color:rgba(249,115,22,.4);color:#fb923c;}
+.flow-arrow{font-size:18px;color:#64748b;padding:0 10px;flex-shrink:0;}
+.flow-label{font-size:11px;color:#64748b;text-align:center;margin-top:6px;margin-bottom:14px;}
+
+/* Summary table */
+.summary-table{width:100%;border-collapse:collapse;margin:1.5rem 0;border-radius:12px;overflow:hidden;}
+.summary-table th{background:#0d0d1a;padding:12px 16px;text-align:left;font-size:12px;
+  font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:#94a3b8;
+  border-bottom:1px solid rgba(255,255,255,0.07);}
+.summary-table td{padding:13px 16px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.05);}
+.summary-table tr:last-child td{border-bottom:none;}
+.summary-table tr:hover td{background:rgba(255,255,255,0.02);}
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;}
+.tag.ws{background:rgba(99,102,241,.15);color:#a5b4fc;}
+.tag.tools{background:rgba(249,115,22,.15);color:#fb923c;}
+.tag.both{background:rgba(16,185,129,.15);color:#34d399;}
+
+/* Step cards */
+.step-section{margin:2.5rem 0;}
+.step-section h2{font-size:18px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:10px;}
+.step-section h2 .num{width:28px;height:28px;border-radius:50%;background:#6366f1;
+  color:#fff;font-size:12px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-section .sub{font-size:13px;color:#94a3b8;margin-bottom:1.25rem;padding-left:38px;}
+.card{background:#0d0d1a;border:1px solid rgba(255,255,255,0.08);border-radius:12px;
+  overflow:hidden;margin-bottom:1rem;}
+.card-head{background:#131325;padding:0.85rem 1.25rem;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid rgba(255,255,255,0.07);}
+.card-head .step-n{width:22px;height:22px;border-radius:50%;background:#f97316;
+  color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.card-head h3{font-size:13px;font-weight:700;}
+.card-body{padding:1.1rem 1.25rem;}
+.card-body p,.card-body li{font-size:13px;color:#cbd5e1;margin-bottom:0.5rem;line-height:1.6;}
+.card-body ul,.card-body ol{padding-left:1.25rem;}
+.card-body strong{color:#f1f5f9;}
+pre{background:#030307;border:1px solid rgba(255,255,255,0.08);color:#e2e8f0;
+  border-radius:8px;padding:1rem 1.1rem;font-size:12px;overflow-x:auto;
+  margin:0.75rem 0;line-height:1.75;position:relative;}
+.copy-btn{position:absolute;top:8px;right:8px;background:rgba(255,255,255,.08);
+  color:#94a3b8;border:none;border-radius:5px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif;}
+.copy-btn:hover{background:rgba(255,255,255,.15);color:#fff;}
+.highlight{background:#1a1530;border:1px solid rgba(249,115,22,.3);border-radius:10px;
+  padding:1rem 1.1rem;margin:0.75rem 0;font-size:13px;color:#fb923c;}
+.highlight strong{color:#f97316;}
+.success-box{background:#0a1f14;border:1px solid rgba(16,185,129,.25);border-radius:10px;
+  padding:1rem 1.1rem;margin:0.75rem 0;font-size:13px;color:#6ee7b7;}
+.success-box strong{color:#34d399;}
+a{color:#60a5fa;}
+.divider{height:1px;background:rgba(255,255,255,0.07);margin:2rem 0;}
+.secrets-table{width:100%;border-collapse:collapse;margin:0.75rem 0;}
+.secrets-table td{padding:10px 14px;font-size:13px;border-bottom:1px solid rgba(255,255,255,0.06);}
+.secrets-table td:first-child{font-weight:700;color:#f1f5f9;font-family:monospace;white-space:nowrap;}
+.secrets-table td:last-child{color:#94a3b8;}
+.secrets-table tr:last-child td{border-bottom:none;}
 </style>
 </head>
 <body>
+
 <div class="hero">
-  <h1>One-Time Setup Guide</h1>
-  <p>Connect your product catalogue to Google Sheets in under 5 minutes — free, forever.</p>
+  <h1>Setup Guide</h1>
+  <p>Wire up both flows — Workshop registration + AI Product leads — in under 15 minutes. All free. All yours.</p>
 </div>
+
 <div class="container">
 
-  <div class="step-card">
-    <div class="step-head"><div class="step-num">1</div><h2>Create the Google Sheet</h2></div>
-    <div class="step-body">
-      <p>Go to <a href="https://sheets.google.com" target="_blank">sheets.google.com</a> and create a new spreadsheet. Name it <strong>AI Products Leads</strong>.</p>
-      <p>In <strong>Row 1</strong>, add these column headers exactly:</p>
-      <pre>Timestamp  |  Product  |  Name  |  Phone  |  Email  |  Message</pre>
-      <p style="font-size:12px;color:#7a7f94;">Each new lead will appear as a new row below this header automatically.</p>
+  <!-- DATA FLOW OVERVIEW -->
+  <div class="step-section">
+    <h2><span class="num">0</span> Understand the data flows first</h2>
+    <p class="sub">Two separate flows. Two separate Google Sheets. One GitHub repo for payment records.</p>
+
+    <table class="summary-table">
+      <thead>
+        <tr>
+          <th>Action</th>
+          <th>Goes to</th>
+          <th>Section</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Someone pays for a workshop track</td>
+          <td>
+            GitHub CSV (daily file in <code>registrations/</code>) <strong>+</strong> Google Sheet (Workshop Registrations)
+          </td>
+          <td><span class="tag ws">Workshop</span></td>
+        </tr>
+        <tr>
+          <td>Someone submits a product enquiry</td>
+          <td>Google Sheet (AI Products Leads)</td>
+          <td><span class="tag tools">AI Tools</span></td>
+        </tr>
+        <tr>
+          <td>Workshop payment fails / is cancelled</td>
+          <td>Nothing saved — user stays on payment step</td>
+          <td><span class="tag ws">Workshop</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="highlight">
+      <strong>Razorpay is used only for workshop courses.</strong><br/>
+      AI product interest forms have no payment — they only capture name, phone, email, and message.
     </div>
   </div>
 
-  <div class="step-card">
-    <div class="step-head"><div class="step-num">2</div><h2>Open Apps Script</h2></div>
-    <div class="step-body">
-      <p>Inside your Google Sheet, click <strong>Extensions → Apps Script</strong>.</p>
-      <p>Delete any code in the editor and paste the following script in full:</p>
-      <div class="copy-wrap">
-        <pre id="script-code"><span class="c">// Google Apps Script — paste this in full</span>
-<span class="k">function</span> doPost(e) {
-  <span class="k">var</span> sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  <span class="k">var</span> data  = JSON.parse(e.postData.contents);
+  <div class="divider"></div>
 
-  sheet.appendRow([
-    data.timestamp || <span class="s">new Date().toLocaleString('en-IN')</span>,
-    data.product  || <span class="s">''</span>,
-    data.name     || <span class="s">''</span>,
-    data.phone    || <span class="s">''</span>,
-    data.email    || <span class="s">''</span>,
-    data.message  || <span class="s">''</span>,
-  ]);
+  <!-- PART A: WORKSHOP -->
+  <div class="step-section">
+    <h2><span class="num">A</span> Workshop — Registration & Payment</h2>
+    <p class="sub">Razorpay → Google Sheet + GitHub CSV file (daily). Uses <code>workshop-script.js</code>.</p>
 
-  <span class="k">return</span> ContentService
-    .createTextOutput(JSON.stringify({ status: <span class="s">'ok'</span> }))
-    .setMimeType(ContentService.MimeType.JSON);
-}</pre>
-        <button class="copy-btn" onclick="copyScript()">Copy</button>
+    <div class="card">
+      <div class="card-head"><div class="step-n">1</div><h3>Create the Workshop Google Sheet</h3></div>
+      <div class="card-body">
+        <p>Go to <a href="https://sheets.google.com" target="_blank">sheets.google.com</a> → create a new spreadsheet named <strong>"AI Workshop Registrations"</strong>.</p>
+        <p>Leave it empty — the script creates the headers automatically on first use.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="step-n">2</div><h3>Add the Apps Script</h3></div>
+      <div class="card-body">
+        <p>Inside the sheet: <strong>Extensions → Apps Script</strong>. Delete any existing code.</p>
+        <p>Open the file <strong><code>workshop-script.js</code></strong> from this repo and paste its entire contents.</p>
+        <p>Click <strong>Save</strong> (Ctrl+S).</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="step-n">3</div><h3>Deploy the Workshop Script as a Web App</h3></div>
+      <div class="card-body">
+        <p>Click <strong>Deploy → New deployment</strong>.</p>
+        <ul>
+          <li>Type: <strong>Web App</strong></li>
+          <li>Execute as: <strong>Me</strong></li>
+          <li>Who has access: <strong>Anyone</strong></li>
+        </ul>
+        <p>Click <strong>Deploy</strong> → Authorise when prompted.</p>
+        <div class="highlight">Copy the Web App URL — you'll need it in Step 5.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="step-n">4</div><h3>Get a GitHub Fine-Grained Token</h3></div>
+      <div class="card-body">
+        <p>This token lets the website write the daily CSV files to your <code>aiproducts</code> repository.</p>
+        <ol>
+          <li>Go to <a href="https://github.com/settings/personal-access-tokens/new" target="_blank">GitHub → Settings → Developer settings → Fine-grained tokens</a></li>
+          <li>Resource owner: <strong>karnkeshav</strong></li>
+          <li>Repository access: <strong>Only selected repositories → aiproducts</strong></li>
+          <li>Permissions → Contents: <strong>Read and write</strong></li>
+          <li>Generate token and copy it.</li>
+        </ol>
       </div>
     </div>
   </div>
 
-  <div class="step-card">
-    <div class="step-head"><div class="step-num">3</div><h2>Deploy as a Web App</h2></div>
-    <div class="step-body">
-      <p>In Apps Script, click <strong>Deploy → New deployment</strong>.</p>
-      <ul>
-        <li>Type: <strong>Web app</strong></li>
-        <li>Description: <em>Lead capture for AI Products</em></li>
-        <li>Execute as: <strong>Me</strong></li>
-        <li>Who has access: <strong>Anyone</strong></li>
-      </ul>
-      <p style="margin-top:0.75rem;">Click <strong>Deploy</strong>. Authorise when prompted (click "Advanced → Go to…" if Google shows a warning — this is your own script).</p>
-      <div class="highlight-box">
-        <strong>Copy the Web App URL</strong> — it looks like:<br/>
-        <code style="font-size:12px;">https://script.google.com/macros/s/AKfycb.../exec</code><br/>
-        You'll need this in the next step.
+  <div class="divider"></div>
+
+  <!-- PART B: PRODUCT LEADS -->
+  <div class="step-section">
+    <h2><span class="num">B</span> AI Products — Lead Capture</h2>
+    <p class="sub">Form submission → Google Sheet (Leads). Uses <code>leads-script.js</code>. No payment involved.</p>
+
+    <div class="card">
+      <div class="card-head"><div class="step-n">1</div><h3>Create the Leads Google Sheet</h3></div>
+      <div class="card-body">
+        <p>Go to <a href="https://sheets.google.com" target="_blank">sheets.google.com</a> → create a <strong>second, separate</strong> spreadsheet named <strong>"AI Products Leads"</strong>.</p>
+        <p>Leave it empty — the script creates the headers automatically.</p>
+        <p style="color:#94a3b8;font-size:12px;">Columns that will be created: Timestamp · Product · Name · Phone · Email · Message</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="step-n">2</div><h3>Add the Leads Apps Script</h3></div>
+      <div class="card-body">
+        <p>Inside the Leads sheet: <strong>Extensions → Apps Script</strong>. Delete any existing code.</p>
+        <p>Open the file <strong><code>leads-script.js</code></strong> from this repo and paste its entire contents.</p>
+        <p>Click <strong>Save</strong>.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="step-n">3</div><h3>Deploy the Leads Script as a Web App</h3></div>
+      <div class="card-body">
+        <p>Click <strong>Deploy → New deployment</strong>.</p>
+        <ul>
+          <li>Type: <strong>Web App</strong></li>
+          <li>Execute as: <strong>Me</strong></li>
+          <li>Who has access: <strong>Anyone</strong></li>
+        </ul>
+        <p>Click <strong>Deploy</strong> → Authorise.</p>
+        <div class="highlight">Copy this Web App URL — different from the workshop URL.</div>
       </div>
     </div>
   </div>
 
-  <div class="step-card">
-    <div class="step-head"><div class="step-num">4</div><h2>Paste the URL into app.js</h2></div>
-    <div class="step-body">
-      <p>Open <strong>app.js</strong> and find line 6 at the very top:</p>
-      <pre><span class="k">const</span> SHEET_ENDPOINT = <span class="s">'YOUR_GOOGLE_APPS_SCRIPT_URL'</span>;</pre>
-      <p>Replace <code>YOUR_GOOGLE_APPS_SCRIPT_URL</code> with the URL you just copied:</p>
-      <pre><span class="k">const</span> SHEET_ENDPOINT = <span class="s">'https://script.google.com/macros/s/AKfycb.../exec'</span>;</pre>
-      <p>Also replace <code>91XXXXXXXXXX</code> on line 7 with your actual WhatsApp number (no spaces, include country code).</p>
-    </div>
-  </div>
+  <div class="divider"></div>
 
-  <div class="step-card">
-    <div class="step-head"><div class="step-num">5</div><h2>Commit & push to GitHub</h2></div>
-    <div class="step-body">
-      <p>Save app.js, then run:</p>
-      <pre>git add app.js
-git commit -m "Connect lead form to Google Sheets"
-git push origin main</pre>
-      <div class="done-box">
-        <strong>✓ You're done.</strong> Every time someone fills the form, a new row appears in your Google Sheet with their name, phone, email, product interest, and message — timestamped and sorted automatically.
+  <!-- PART C: GITHUB SECRETS -->
+  <div class="step-section">
+    <h2><span class="num">C</span> Add all secrets to GitHub (one-time)</h2>
+    <p class="sub">
+      Go to <a href="https://github.com/karnkeshav/aiproducts/settings/secrets/actions" target="_blank">
+      github.com/karnkeshav/aiproducts → Settings → Secrets and variables → Actions</a>.
+      Add each secret below:
+    </p>
+
+    <div class="card">
+      <div class="card-body" style="padding:0;">
+        <table class="secrets-table">
+          <tr>
+            <td>GOOGLE_SHEET_URL</td>
+            <td>Workshop Apps Script Web App URL (from Part A, Step 3)</td>
+          </tr>
+          <tr>
+            <td>RAZORPAY_KEY_ID</td>
+            <td>Your Razorpay publishable key — starts with <code>rzp_live_</code> or <code>rzp_test_</code></td>
+          </tr>
+          <tr>
+            <td>CSV_GITHUB_TOKEN</td>
+            <td>Fine-grained GitHub PAT from Part A, Step 4</td>
+          </tr>
+          <tr>
+            <td>LEADS_SHEET_URL</td>
+            <td>Product Leads Apps Script Web App URL (from Part B, Step 3)</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><div class="step-n">✓</div><h3>Trigger a deploy</h3></div>
+      <div class="card-body">
+        <p>Push any change to <code>main</code> (or go to <strong>Actions → Deploy to GitHub Pages → Run workflow</strong>).</p>
+        <p>GitHub Actions will inject all four secrets into <code>config.js</code> and deploy the page.</p>
+        <div class="success-box">
+          <strong>✓ You're done.</strong><br/>
+          Workshop payments → GitHub <code>registrations/YYYY-MM-DD.csv</code> (appends daily, new file each day) + Google Sheet.<br/>
+          Product enquiries → Google Sheet "AI Products Leads" (one row per enquiry).
+        </div>
       </div>
     </div>
   </div>
 
-  <p style="text-align:center;font-size:12px;color:#7a7f94;padding:1rem 0 2rem;">Need help? The entire setup takes about 5 minutes.</p>
+  <div class="divider"></div>
+
+  <!-- VERIFICATION -->
+  <div class="step-section">
+    <h2><span class="num">D</span> How to verify it's all working</h2>
+    <p class="sub">Quick checks after your first deploy.</p>
+
+    <div class="card">
+      <div class="card-body">
+        <p><strong>Workshop Script health-check:</strong> paste your <code>GOOGLE_SHEET_URL</code> into a browser. You should see:<br/>
+        <code style="color:#6ee7b7;font-size:12px;">AI Workshop registration endpoint is active. Registrations are saved here.</code></p>
+
+        <p style="margin-top:12px;"><strong>Leads Script health-check:</strong> paste your <code>LEADS_SHEET_URL</code> into a browser. You should see:<br/>
+        <code style="color:#6ee7b7;font-size:12px;">AI Products leads endpoint is active. Enquiries are saved here.</code></p>
+
+        <p style="margin-top:12px;"><strong>Test a product enquiry:</strong> open your site, tap "I'm Interested" on any product, fill in the form, submit. Check the "AI Products Leads" Google Sheet — a new row should appear within seconds.</p>
+
+        <p style="margin-top:12px;"><strong>Test a workshop payment:</strong> use Razorpay's test mode key (<code>rzp_test_…</code>) and test card number <code>4111 1111 1111 1111</code>. After payment, check:
+        <ul style="margin-top:6px;">
+          <li>Google Sheet "AI Workshop Registrations" — new row</li>
+          <li>GitHub repo → <code>registrations/YYYY-MM-DD.csv</code> — new file</li>
+        </ul>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <p style="text-align:center;font-size:12px;color:#64748b;padding-top:1rem;">
+    Need help? Open an issue on GitHub or reach out directly.
+  </p>
+
 </div>
 
 <script>
-function copyScript() {
-  const code = document.getElementById('script-code').innerText;
-  navigator.clipboard.writeText(code).then(() => {
-    const btn = document.querySelector('.copy-btn');
+document.querySelectorAll('pre').forEach(function(pre) {
+  var btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.textContent = 'Copy';
+  btn.addEventListener('click', function() {
+    navigator.clipboard.writeText(pre.innerText.replace('Copy\n',''));
     btn.textContent = 'Copied!';
-    setTimeout(() => btn.textContent = 'Copy', 2000);
+    setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
   });
-}
+  pre.style.position = 'relative';
+  pre.appendChild(btn);
+});
 </script>
 </body>
 </html>
