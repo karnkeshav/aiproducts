@@ -265,11 +265,6 @@ button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 .r4l-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:4px;}
 .r4l-amount{font-size:2rem;font-weight:900;color:#fb923c;}
 .r4l-label{font-size:12px;color:var(--muted);}
-.r4l-orig{font-size:13px;color:var(--dim);text-decoration:line-through;}
-.r4l-save{
-  display:inline-block;background:rgba(74,222,128,.15);color:#4ade80;
-  font-size:11px;font-weight:700;border-radius:20px;padding:3px 10px;margin-bottom:12px;
-}
 .r4l-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px;}
 .r4l-cell{background:rgba(255,255,255,.05);border-radius:8px;
   padding:10px 12px;text-align:center;}
@@ -603,7 +598,7 @@ var PRODUCTS = [
     name:'Ready4Exam Portal',
     desc:'A full exam-readiness platform for students. Free modules available. Paid tiers with deeper features. No customisation needed — just use it.',
     meta:'✓ Free modules · ✓ Paid tiers · Schools: let\'s discuss deployment',
-    visitBtn: { label:'🌐 Visit Portal', href:'#' },
+    visitBtn: { label:'🌐 Visit Portal', href:'https://ready4exam.in' },
     interestLabel:'🏫 Schools — Enquire',
     schoolMode: true,
   },
@@ -652,7 +647,7 @@ var PRODUCTS = [
   },
   {
     id:'r4l', num:'09', icon:'🚀', iconBg:'rgba(249,115,22,.12)',
-    badge:'fire', badgeLabel:'Pre-Booking Open',
+    badge:'fire', badgeLabel:'Queue Open — 5 Slots',
     name:'Ready4Launch — TextToApp',
     featured: true,
   },
@@ -887,40 +882,39 @@ function buildR4LCard() {
 
   var top = el('div', { class:'product-top' });
   top.appendChild(el('div', { class:'product-icon', style:'background:rgba(249,115,22,.12)' }, '🚀'));
-  top.appendChild(el('span', { class:'p-badge fire' }, 'Pre-Booking Open'));
+  top.appendChild(el('span', { class:'p-badge fire' }, 'Queue Open — 5 Slots'));
   card.appendChild(top);
 
   card.appendChild(el('div', { class:'product-num' }, 'Product 09'));
   card.appendChild(el('div', { class:'product-name' }, 'Ready4Launch — TextToApp'));
+
   card.appendChild(el('div', { class:'product-desc' },
-    'Type one line. Get a complete app. Converts text to Word docs, generates presentations, and builds any app from a single prompt — no coding, no team, no waiting.'));
+    'TextToApp is built and working. Type one line — get a complete, usable output. Word documents, full presentations, working web apps — from a single prompt. No coding. No team. No guesswork.'));
 
-  var price = el('div', { class:'r4l-price' });
-  var row = el('div', { class:'r4l-row' });
-  row.appendChild(el('span', { class:'r4l-amount' }, '₹499'));
-  var det = el('div', {});
-  det.appendChild(el('div', { class:'r4l-label' }, 'Pre-booking price'));
-  det.appendChild(el('div', { class:'r4l-orig' }, '₹1,999 at launch'));
-  row.appendChild(det);
-  price.appendChild(row);
-  price.appendChild(el('div', { class:'r4l-save' }, 'You save ₹1,500 — 75% off launch'));
-  card.appendChild(price);
+  card.appendChild(el('div', { class:'product-desc', style:'margin-top:-4px' },
+    'Access runs as a rolling queue. Five people use it at a time, five days each. When your five days are up, the next person in line gets their turn. Pay ₹499 now to hold your place. Once it\'s your turn, you get full hands-on access — no restrictions.'));
 
+  // Queue stats
   var grid = el('div', { class:'r4l-grid' });
-  [['5','Day pilot'],['2','Prompts/day'],['3','Core features'],['~4–5','Days to launch']].forEach(function(s) {
+  [
+    ['5',    'Active at a time'],
+    ['5 days','Per person'],
+    ['₹499',  'To join the queue'],
+    ['Your turn', 'Guaranteed'],
+  ].forEach(function(s) {
     var c = el('div', { class:'r4l-cell' });
-    c.appendChild(el('div', { class:'r4l-cell-n' }, s[0]));
+    c.appendChild(el('div', { class:'r4l-cell-n', style:'font-size:1rem' }, s[0]));
     c.appendChild(el('div', { class:'r4l-cell-l' }, s[1]));
     grid.appendChild(c);
   });
   card.appendChild(grid);
 
-  card.appendChild(el('div', { class:'product-meta', style:'margin-bottom:14px' },
-    'API costs on me during pilot — slots are limited. Those who\'ve seen it are already asking when it ships.'));
+  card.appendChild(el('div', { class:'product-meta', style:'margin-bottom:16px;color:rgba(255,255,255,.4)' },
+    'API costs are covered. Your slot is yours until your five days are done.'));
 
-  var btn = el('button', { class:'btn-preorder' }, '🔥 Pre-Book My Pilot Slot — ₹499');
+  var btn = el('button', { class:'btn-preorder' }, 'Secure My Slot — ₹499');
   btn.addEventListener('click', function() {
-    openLeadSheet('Ready4Launch — TextToApp (Pilot Pre-Booking ₹499)');
+    openLeadSheet('Ready4Launch — TextToApp (Queue Slot ₹499)');
   });
   card.appendChild(btn);
 
@@ -944,7 +938,9 @@ function buildFooter() {
   });
   f.appendChild(badges);
   var note = el('div', { class:'footer-note' });
-  note.innerHTML = 'All products are real, tested, and working. Every one was built solo using AI.<br>Replace <strong>91XXXXXXXXXX</strong> in config.js with your WhatsApp number.';
+  note.innerHTML = 'All products are real, tested, and working. Every one was built solo using AI.<br>'
+    + 'Questions? WhatsApp: <a href="https://wa.me/917680973409" target="_blank" style="color:var(--orange);text-decoration:none">+91 76809 73409</a>';
+
   f.appendChild(note);
   return f;
 }
