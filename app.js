@@ -1261,7 +1261,12 @@ function submitLead() {
   };
 
   var sendFn = (LEADS_URL && LEADS_URL !== 'YOUR_LEADS_SCRIPT_URL')
-    ? fetch(LEADS_URL + '?' + new URLSearchParams(payload), { mode:'no-cors' })
+    ? fetch(LEADS_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
     : Promise.resolve();
 
   sendFn
