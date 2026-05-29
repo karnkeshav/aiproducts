@@ -71,6 +71,7 @@ jobs:
           cp index.html        dist/
           cp app.js            dist/
           cp config.js         dist/
+          cp setup-guide.html  dist/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
