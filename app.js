@@ -608,7 +608,6 @@ var PLANS = [
       'All 3 Tracks — complete access',
       '24+ days of structured learning',
       'Real projects — hands-on every day',
-      'Lifetime recordings access',
     ],
   },
 ];
