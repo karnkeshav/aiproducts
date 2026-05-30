@@ -102,7 +102,7 @@ button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 }
 .hero h1 .g1{background:var(--ws-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 .hero h1 .g2{background:var(--tools-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.hero-sub{font-size:16px;color:var(--muted);max-width:300px;line-height:1.7;margin-bottom:32px;}
+.hero-sub{font-size:16px;color:var(--muted);max-width:340px;line-height:1.7;margin-bottom:32px;}
 .hero-stats{
   display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:36px;
 }
@@ -113,7 +113,7 @@ button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 }
 .hero-stat b{color:var(--text);}
 .hero-stat.hot{background:rgba(249,115,22,.1);border-color:rgba(249,115,22,.3);color:#fb923c;}
-.hero-btns{display:flex;flex-direction:column;gap:12px;width:100%;max-width:320px;}
+.hero-btns{display:flex;flex-direction:column;gap:12px;width:100%;max-width:340px;}
 .hero-scroll{
   position:absolute;bottom:28px;left:50%;transform:translateX(-50%);
   display:flex;flex-direction:column;align-items:center;gap:6px;
@@ -127,7 +127,7 @@ button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 @keyframes bounce{0%,100%{transform:translateY(0);}50%{transform:translateY(4px);}}
 
 /* ── SECTION WRAPPER ── */
-.section{padding:64px 20px 0;max-width:480px;margin:0 auto;}
+.section{padding:48px 20px 0;margin:0 auto;width:100%;}
 .section-head{margin-bottom:32px;}
 .section-eyebrow{
   font-size:10.5px;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;
@@ -147,7 +147,7 @@ button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 }
 
 /* ── PLAN CARDS ── */
-.plans{display:flex;flex-direction:column;gap:14px;padding-bottom:80px;}
+.plans{display:grid;grid-template-columns:1fr;gap:14px;padding-bottom:80px;}
 .plan{
   background:var(--s1);border:2px solid var(--b1);border-radius:var(--r);
   padding:20px;cursor:pointer;position:relative;overflow:hidden;
@@ -214,7 +214,7 @@ button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 .plan-btn:active{transform:translateY(0);}
 
 /* ── PRODUCT CARDS ── */
-.tools-grid{display:flex;flex-direction:column;gap:12px;padding-bottom:80px;}
+.tools-grid{display:grid;grid-template-columns:1fr;gap:14px;padding-bottom:80px;}
 .product{
   background:var(--s1);border:1px solid var(--b1);border-radius:var(--r);
   padding:20px 20px 16px;position:relative;overflow:hidden;
@@ -282,8 +282,9 @@ button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 
 /* ── SECTION DIVIDER ── */
 .section-divider{
-  max-width:480px;margin:72px auto 0;padding:0 20px;
+  margin:72px auto 0;padding:0 20px;
   display:flex;align-items:center;gap:16px;
+  width:100%;
 }
 .section-divider::before,.section-divider::after{
   content:'';flex:1;height:1px;background:var(--b1);
@@ -295,8 +296,9 @@ button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 
 /* ── FOOTER ── */
 .footer{
-  max-width:480px;margin:72px auto 0;padding:40px 24px 48px;
+  margin:72px auto 0;padding:40px 24px 48px;
   text-align:center;border-top:1px solid var(--b1);
+  width:100%;
 }
 .footer-brand{font-size:18px;font-weight:800;margin-bottom:8px;
   background:var(--ws-grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
@@ -495,14 +497,50 @@ button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
 .fade-in.visible{opacity:1;transform:translateY(0);}
 
 /* ── RESPONSIVE ── */
+
+/* 2-col product cards */
 @media(min-width:520px){
-  .tools-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .tools-grid{grid-template-columns:1fr 1fr;gap:14px;}
   .product.featured{grid-column:1/-1;}
+  .hero h1{font-size:clamp(58px,14vw,88px);}
 }
-@media(min-width:900px){
+
+/* Tablet: 2-col plans, wider sections */
+@media(min-width:768px){
+  .plans{grid-template-columns:1fr 1fr;gap:16px;}
+  .section{padding:56px 32px 0;max-width:960px;}
+  .section-head{max-width:600px;}
+  .section-divider{padding:0 32px;max-width:960px;}
+  .footer{padding:48px 32px 56px;max-width:960px;}
+  .nav{padding:12px 32px;}
+  .hero-sub{max-width:460px;}
+  .hero-btns{flex-direction:row;max-width:480px;}
+  .hero-btns .btn{flex:1;}
+}
+
+/* Desktop */
+@media(min-width:1024px){
   .tools-grid{grid-template-columns:1fr 1fr 1fr;}
-  .section{padding:80px 24px 0;}
-  .hero{padding:100px 40px 80px;}
+  .product.featured{grid-column:1/-1;}
+  .section{padding:72px 56px 0;max-width:1200px;}
+  .section-head{max-width:680px;}
+  .section-divider{padding:0 56px;max-width:1200px;}
+  .footer{padding:56px 56px 72px;max-width:1200px;}
+  .hero{padding:130px 80px 110px;}
+  .hero-sub{max-width:520px;font-size:18px;}
+  .hero-btns{max-width:520px;gap:14px;}
+  .nav{padding:14px 56px;}
+  .sheet{left:50%;right:auto;transform:translateX(-50%) translateY(100%);width:100%;max-width:520px;}
+  .sheet.open{transform:translateX(-50%) translateY(0);}
+}
+
+/* Wide desktop */
+@media(min-width:1400px){
+  .section{padding:88px 80px 0;max-width:1400px;}
+  .section-divider{padding:0 80px;max-width:1400px;}
+  .footer{padding:64px 80px;max-width:1400px;}
+  .nav{padding:16px 80px;}
+  .tools-grid{grid-template-columns:repeat(4,1fr);}
 }
 `;
   var s = document.createElement('style');
@@ -516,7 +554,7 @@ var PLANS = [
   {
     id:'track-a', track:'TRACK A', name:'AI Productivity Essentials',
     sub:'Use AI Effectively', dur:'5 Days',
-    orig:1999, price:999, save:'50% OFF', color:'#8b5cf6',
+    orig:1999, price:999, save:'Inaugural Offer', color:'#8b5cf6',
     feats:[
       'Understanding AI in simple language',
       'Prompt & Content Engineering',
@@ -532,7 +570,7 @@ var PLANS = [
   {
     id:'track-b', track:'TRACK B', name:'AI App Builder',
     sub:'Build with AI', dur:'10 Days',
-    orig:4999, price:2499, save:'50% OFF', color:'#10b981',
+    orig:4999, price:2499, save:'Inaugural Offer', color:'#10b981',
     feats:[
       'Introduction to Vibe Coding',
       'Building apps without traditional coding',
@@ -549,7 +587,7 @@ var PLANS = [
   {
     id:'track-c', track:'TRACK C', name:'Advanced AI Workflows',
     sub:'Control and Scale AI', dur:'5 Days',
-    orig:2999, price:1499, save:'50% OFF', color:'#f59e0b',
+    orig:2999, price:1499, save:'Inaugural Offer', color:'#f59e0b',
     feats:[
       'API integrations, keys & unlimited workflows',
       'Advanced automation systems using AI',
@@ -565,7 +603,7 @@ var PLANS = [
   {
     id:'combo', track:'ALL 3 TRACKS', name:'Combo — Get All 3',
     sub:'Unlock everything. Build anything.', dur:'24+ Days',
-    orig:9999, price:4499, save:'55% OFF', color:'#6366f1', isCombo:true,
+    orig:9999, price:4499, save:'Inaugural Offer', color:'#6366f1', isCombo:true,
     feats:[
       'All 3 Tracks — complete access',
       '24+ days of structured learning',
@@ -733,7 +771,7 @@ function buildHero() {
   [
     { txt: '<b>4</b> AI Tracks' },
     { txt: '<b>9</b> AI Tools Built', cls: '' },
-    { txt: '🔥 <b>50% OFF</b> This Session', cls: 'hot' },
+    { txt: '🎯 <b>Inaugural Offer</b>', cls: 'hot' },
   ].forEach(function(s) {
     var stat = el('div', { class:'hero-stat' + (s.cls ? ' '+s.cls : '') });
     stat.innerHTML = s.txt;
@@ -746,7 +784,7 @@ function buildHero() {
   b1.addEventListener('click', function() { scrollToSection('workshop'); });
   var b2 = el('button', {
     class:'btn',
-    style:'width:100%;padding:14px;border-radius:50px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);color:var(--muted);font-size:14px;font-weight:600;'
+    style:'width:100%;padding:14px;border-radius:50px;background:transparent;border:1.5px solid rgba(249,115,22,.45);color:#fb923c;font-size:14px;font-weight:600;'
   }, 'Explore AI Tools →');
   b2.addEventListener('click', function() { scrollToSection('tools'); });
   btns.appendChild(b1); btns.appendChild(b2);
@@ -771,7 +809,7 @@ function buildWorkshopSection() {
   wrap.appendChild(head);
 
   var pill = el('div', { class:'offer-pill' });
-  pill.innerHTML = '🎁&nbsp; FLAT 50% OFF — Limited Seats This Session';
+  pill.innerHTML = '🎯&nbsp; Inaugural Offer — 50% off all tracks for this batch';
   wrap.appendChild(pill);
 
   var plans = el('div', { class:'plans', id:'plans-list' });
