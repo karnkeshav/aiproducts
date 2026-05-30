@@ -554,7 +554,7 @@ var PLANS = [
   {
     id:'track-a', track:'TRACK A', name:'AI Productivity Essentials',
     sub:'Use AI Effectively', dur:'5 Days',
-    orig:1999, price:999, save:'Inaugural Offer', color:'#8b5cf6',
+    orig:1999, price:999, save:'50% Inaugural Offer', color:'#8b5cf6',
     feats:[
       'Understanding AI in simple language',
       'Prompt & Content Engineering',
@@ -570,7 +570,7 @@ var PLANS = [
   {
     id:'track-b', track:'TRACK B', name:'AI App Builder',
     sub:'Build with AI', dur:'10 Days',
-    orig:4999, price:2499, save:'Inaugural Offer', color:'#10b981',
+    orig:4999, price:2499, save:'50% Inaugural Offer', color:'#10b981',
     feats:[
       'Introduction to Vibe Coding',
       'Building apps without traditional coding',
@@ -587,7 +587,7 @@ var PLANS = [
   {
     id:'track-c', track:'TRACK C', name:'Advanced AI Workflows',
     sub:'Control and Scale AI', dur:'5 Days',
-    orig:2999, price:1499, save:'Inaugural Offer', color:'#f59e0b',
+    orig:2999, price:1499, save:'50% Inaugural Offer', color:'#f59e0b',
     feats:[
       'API integrations, keys & unlimited workflows',
       'Advanced automation systems using AI',
@@ -603,7 +603,7 @@ var PLANS = [
   {
     id:'combo', track:'ALL 3 TRACKS', name:'Combo — Get All 3',
     sub:'Unlock everything. Build anything.', dur:'24+ Days',
-    orig:9999, price:4499, save:'Inaugural Offer', color:'#6366f1', isCombo:true,
+    orig:9999, price:4499, save:'55% Inaugural Offer', color:'#6366f1', isCombo:true,
     feats:[
       'All 3 Tracks — complete access',
       '24+ days of structured learning',
