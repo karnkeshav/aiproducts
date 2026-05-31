@@ -692,6 +692,7 @@ var PRODUCTS = [
 
 // ── State ─────────────────────────────────────────────────────────────────────
 var ST = { plan:null, batch:null, reg:{}, payId:null, regStep:1 };
+var leadProductId = '';
 
 // ── DOM helper ────────────────────────────────────────────────────────────────
 function el(tag, props, children) {
@@ -906,8 +907,9 @@ function buildProductCard(p) {
   }
   var label = p.interestLabel || '✉ I\'m Interested';
   var productLabel = p.schoolMode ? p.name + ' (School Deployment)' : p.name;
+  var productId = p.schoolMode ? p.id + '-school' : p.id;
   var btn = el('button', { class:'btn-interest' }, label);
-  btn.addEventListener('click', function() { openLeadSheet(productLabel); });
+  btn.addEventListener('click', function() { openLeadSheet(productLabel, productId); });
   actions.appendChild(btn);
   card.appendChild(actions);
 
@@ -951,7 +953,7 @@ function buildR4LCard() {
 
   var btn = el('button', { class:'btn-preorder' }, 'Secure My Slot — ₹499');
   btn.addEventListener('click', function() {
-    openLeadSheet('Ready4Launch — TextToApp (Queue Slot ₹499)');
+    openLeadSheet('Ready4Launch — TextToApp (Queue Slot ₹499)', 'r4l');
   });
   card.appendChild(btn);
 
@@ -1244,7 +1246,8 @@ function buildLeadForm() {
   return f;
 }
 
-function openLeadSheet(productName) {
+function openLeadSheet(productName, productId) {
+  leadProductId = productId || '';
   document.getElementById('lead-product-title').textContent = productName;
   document.getElementById('lead-success').style.display = 'none';
   document.getElementById('lead-form-inner').style.display = 'block';
@@ -1314,6 +1317,7 @@ function submitLead() {
       document.getElementById('lead-foot').innerHTML = '';
     });
 
+  saveLeadToGitHub(payload, leadProductId).catch(function(e) { console.error('GitHub leads:', e); });
   console.table(payload); // dev fallback
 }
 
@@ -1472,6 +1476,36 @@ async function saveToGitHub(data) {
     var res = await fetch(url, { method:'PUT', headers:hdrs, body:JSON.stringify(body) });
     if (!res.ok) console.error('GitHub PUT failed:', await res.text());
   } catch(e) { console.error('GitHub error:', e); }
+}
+
+// ── GitHub CSV save (leads) ───────────────────────────────────────────────────
+async function saveLeadToGitHub(data, productId) {
+  if (!GH_TOKEN) { console.warn('GH_TOKEN not set'); return; }
+  var slug = productId || 'general';
+  var path = 'leads/' + slug + '.csv';
+  var url  = 'https://api.github.com/repos/' + GH_REPO + '/contents/' + path;
+  var hdrs = {
+    'Authorization':'Bearer ' + GH_TOKEN,
+    'Accept':'application/vnd.github+json',
+    'Content-Type':'application/json',
+    'X-GitHub-Api-Version':'2022-11-28',
+  };
+  var sha = '', existing = '';
+  try {
+    var r = await fetch(url, { headers:hdrs });
+    if (r.ok) { var d = await r.json(); sha = d.sha; existing = decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))); }
+  } catch(e) {}
+  function cell(v) { return '"' + String(v||'').replace(/"/g,'""') + '"'; }
+  var row = [data.timestamp, data.product, data.name, data.phone, data.email, data.message].map(cell).join(',');
+  var HEADER = '"Timestamp (IST)","Product","Name","Phone","Email","Message"';
+  var csv = (existing || HEADER+'\n') + row + '\n';
+  var today = new Date().toLocaleDateString('en-CA', { timeZone:'Asia/Kolkata' });
+  var body = { message:'lead: '+(data.name||'unknown')+'|'+slug+'|'+today, content:btoa(unescape(encodeURIComponent(csv))) };
+  if (sha) body.sha = sha;
+  try {
+    var res = await fetch(url, { method:'PUT', headers:hdrs, body:JSON.stringify(body) });
+    if (!res.ok) console.error('GitHub leads PUT failed:', await res.text());
+  } catch(e) { console.error('GitHub leads error:', e); }
 }
 
 // ── Scroll behaviour ──────────────────────────────────────────────────────────
