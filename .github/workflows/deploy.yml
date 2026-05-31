@@ -81,6 +81,7 @@ jobs:
           cp app.js           dist/
           cp config.js        dist/
           cp setup-guide.html dist/
+          touch dist/.nojekyll
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
