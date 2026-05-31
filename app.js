@@ -1480,7 +1480,7 @@ async function saveToGitHub(data) {
 
 // ── GitHub CSV save (leads) ───────────────────────────────────────────────────
 async function saveLeadToGitHub(data) {
-  if (!GH_TOKEN) { console.warn('GH_TOKEN not set'); return; }
+  if (!GH_TOKEN) { console.error('[leads] GH_TOKEN is empty — check CSV_GITHUB_TOKEN secret'); return; }
   var today = new Date().toLocaleDateString('en-CA', { timeZone:'Asia/Kolkata' });
   var path  = 'leads/' + today + '.csv';
   var url   = 'https://api.github.com/repos/' + GH_REPO + '/contents/' + path;
@@ -1493,8 +1493,9 @@ async function saveLeadToGitHub(data) {
   var sha = '', existing = '';
   try {
     var r = await fetch(url, { headers:hdrs });
+    console.log('[leads] GET', path, r.status);
     if (r.ok) { var d = await r.json(); sha = d.sha; existing = decodeURIComponent(escape(atob(d.content.replace(/\n/g,'')))); }
-  } catch(e) {}
+  } catch(e) { console.error('[leads] GET error:', e); }
   function cell(v) { return '"' + String(v||'').replace(/"/g,'""') + '"'; }
   var row = [data.timestamp, data.product, data.name, data.phone, data.email, data.message].map(cell).join(',');
   var HEADER = '"Timestamp (IST)","Product","Name","Phone","Email","Message"';
@@ -1503,8 +1504,9 @@ async function saveLeadToGitHub(data) {
   if (sha) body.sha = sha;
   try {
     var res = await fetch(url, { method:'PUT', headers:hdrs, body:JSON.stringify(body) });
-    if (!res.ok) console.error('GitHub leads PUT failed:', await res.text());
-  } catch(e) { console.error('GitHub leads error:', e); }
+    if (res.ok) { console.log('[leads] saved to', path); }
+    else { console.error('[leads] PUT failed', res.status, await res.text()); }
+  } catch(e) { console.error('[leads] PUT error:', e); }
 }
 
 // ── Scroll behaviour ──────────────────────────────────────────────────────────
