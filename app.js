@@ -1317,7 +1317,7 @@ function submitLead() {
       document.getElementById('lead-foot').innerHTML = '';
     });
 
-  saveLeadToGitHub(payload, leadProductId).catch(function(e) { console.error('GitHub leads:', e); });
+  saveLeadToGitHub(payload).catch(function(e) { console.error('GitHub leads:', e); });
   console.table(payload); // dev fallback
 }
 
@@ -1479,12 +1479,12 @@ async function saveToGitHub(data) {
 }
 
 // ── GitHub CSV save (leads) ───────────────────────────────────────────────────
-async function saveLeadToGitHub(data, productId) {
+async function saveLeadToGitHub(data) {
   if (!GH_TOKEN) { console.warn('GH_TOKEN not set'); return; }
-  var slug = productId || 'general';
-  var path = 'leads/' + slug + '.csv';
-  var url  = 'https://api.github.com/repos/' + GH_REPO + '/contents/' + path;
-  var hdrs = {
+  var today = new Date().toLocaleDateString('en-CA', { timeZone:'Asia/Kolkata' });
+  var path  = 'leads/' + today + '.csv';
+  var url   = 'https://api.github.com/repos/' + GH_REPO + '/contents/' + path;
+  var hdrs  = {
     'Authorization':'Bearer ' + GH_TOKEN,
     'Accept':'application/vnd.github+json',
     'Content-Type':'application/json',
@@ -1499,8 +1499,7 @@ async function saveLeadToGitHub(data, productId) {
   var row = [data.timestamp, data.product, data.name, data.phone, data.email, data.message].map(cell).join(',');
   var HEADER = '"Timestamp (IST)","Product","Name","Phone","Email","Message"';
   var csv = (existing || HEADER+'\n') + row + '\n';
-  var today = new Date().toLocaleDateString('en-CA', { timeZone:'Asia/Kolkata' });
-  var body = { message:'lead: '+(data.name||'unknown')+'|'+slug+'|'+today, content:btoa(unescape(encodeURIComponent(csv))) };
+  var body = { message:'lead: '+(data.name||'unknown')+'|'+today, content:btoa(unescape(encodeURIComponent(csv))) };
   if (sha) body.sha = sha;
   try {
     var res = await fetch(url, { method:'PUT', headers:hdrs, body:JSON.stringify(body) });
