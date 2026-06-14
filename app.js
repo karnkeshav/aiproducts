@@ -862,8 +862,7 @@ function buildGroupBonus() {
     'Get <strong>5 people enrolled</strong> in any track — friends, colleagues, or family — ' +
     'and we\'ll reward you with a <strong>special group discount</strong> on your own enrolment fee. ' +
     'Your referrals can be spread across <strong>any combination of tracks</strong>.<br><br>' +
-    'WhatsApp us once your 5 are confirmed and the discount is applied to your seat instantly. ' +
-    'No codes, no forms — just a quick message and it\'s done.';
+    'Once you have all 5 interested, WhatsApp us with their details. We\'ll get them enrolled and then apply your group discount.';
   card.appendChild(body);
 
   card.appendChild(el('a', {
