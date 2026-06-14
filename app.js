@@ -868,7 +868,7 @@ function buildGroupBonus() {
 
   card.appendChild(el('a', {
     class: 'group-bonus-cta',
-    href: 'https://wa.me/917680973409?text=Hi%20Keshav!%20I%20have%20got%205%20people%20enrolled%20and%20want%20to%20claim%20my%20group%20bonus%20discount.',
+    href: 'https://wa.me/917680973409?text=Hi%20Keshav%2C%20I%20have%205%20people%20who%20wants%20to%20enroll%20in%20the%20same%20plan%20in%20which%20I%20am%20getting%20enrolled.%20Let%20me%20know%20how%20to%20proceed.',
     target: '_blank',
   }, '💬  Claim Your Group Bonus →'));
 
