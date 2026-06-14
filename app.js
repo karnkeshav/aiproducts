@@ -491,6 +491,34 @@ button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation;}
   color:#fca5a5;padding:12px 14px;border-radius:10px;font-size:13px;
   margin-bottom:14px;display:none;}
 
+/* ── GROUP BONUS ── */
+.group-bonus{
+  background:linear-gradient(135deg,rgba(16,185,129,.07),rgba(99,102,241,.07));
+  border:2px solid rgba(16,185,129,.35);border-radius:var(--r);
+  padding:22px 20px;margin-bottom:80px;position:relative;overflow:hidden;
+}
+.group-bonus::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,#10b981,#6366f1);
+}
+.group-bonus-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.3);
+  color:#34d399;font-size:10px;font-weight:800;letter-spacing:1.5px;
+  text-transform:uppercase;padding:4px 12px;border-radius:20px;margin-bottom:12px;
+}
+.group-bonus-title{font-size:17px;font-weight:800;margin-bottom:8px;line-height:1.3;}
+.group-bonus-body{font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px;}
+.group-bonus-body strong{color:var(--text);}
+.group-bonus-cta{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(16,185,129,.15);border:1.5px solid rgba(16,185,129,.4);
+  color:#34d399;font-family:inherit;font-size:13px;font-weight:700;
+  border-radius:50px;padding:10px 22px;cursor:pointer;text-decoration:none;
+  transition:background 0.15s,border-color 0.15s;
+}
+.group-bonus-cta:hover{background:rgba(16,185,129,.25);border-color:rgba(16,185,129,.6);}
+
 /* ── ANIMATIONS ── */
 .fade-in{opacity:0;transform:translateY(20px);
   transition:opacity .6s ease,transform .6s ease;}
@@ -554,7 +582,7 @@ var PLANS = [
   {
     id:'track-a', track:'TRACK A', name:'AI Productivity Essentials',
     sub:'Use AI Effectively', dur:'5 Days',
-    orig:1999, price:999, save:'50% Inaugural Offer', color:'#8b5cf6',
+    orig:2999, price:1500, save:'50% Inaugural Offer', color:'#8b5cf6',
     feats:[
       'Understanding AI in simple language',
       'Prompt & Content Engineering',
@@ -570,7 +598,7 @@ var PLANS = [
   {
     id:'track-b', track:'TRACK B', name:'AI App Builder',
     sub:'Build with AI', dur:'10 Days',
-    orig:4999, price:2499, save:'50% Inaugural Offer', color:'#10b981',
+    orig:6999, price:3500, save:'50% Inaugural Offer', color:'#10b981',
     feats:[
       'Introduction to Vibe Coding',
       'Building apps without traditional coding',
@@ -586,8 +614,8 @@ var PLANS = [
   },
   {
     id:'track-c', track:'TRACK C', name:'Advanced AI Workflows',
-    sub:'Control and Scale AI', dur:'5 Days',
-    orig:2999, price:1499, save:'50% Inaugural Offer', color:'#f59e0b',
+    sub:'Control and Scale AI', dur:'7 Days',
+    orig:3499, price:1800, save:'50% Inaugural Offer', color:'#f59e0b',
     feats:[
       'API integrations, keys & unlimited workflows',
       'Advanced automation systems using AI',
@@ -602,11 +630,11 @@ var PLANS = [
   },
   {
     id:'combo', track:'ALL 3 TRACKS', name:'Combo — Get All 3',
-    sub:'Unlock everything. Build anything.', dur:'24+ Days',
-    orig:9999, price:4499, save:'55% Inaugural Offer', color:'#6366f1', isCombo:true,
+    sub:'Unlock everything. Build anything.', dur:'22 Days',
+    orig:13497, price:6099, save:'Over 55% Inaugural Offer', color:'#6366f1', isCombo:true,
     feats:[
       'All 3 Tracks — complete access',
-      '24+ days of structured learning',
+      '22 days of structured learning',
       'Real projects — hands-on every day',
     ],
   },
@@ -816,7 +844,35 @@ function buildWorkshopSection() {
   PLANS.forEach(function(p) { plans.appendChild(buildPlanCard(p)); });
   wrap.appendChild(plans);
 
+  wrap.appendChild(buildGroupBonus());
+
   return wrap;
+}
+
+function buildGroupBonus() {
+  var card = el('div', { class:'group-bonus' });
+
+  card.appendChild(el('div', { class:'group-bonus-badge' }, '👥  Group Enrolment Offer'));
+
+  card.appendChild(el('div', { class:'group-bonus-title' },
+    'Bring 5 People · Get a Special Bonus on Your Own Seat'));
+
+  var body = el('div', { class:'group-bonus-body' });
+  body.innerHTML =
+    'Get <strong>5 people enrolled</strong> in any track — friends, colleagues, or family — ' +
+    'and we\'ll reward you with a <strong>special group discount</strong> on your own enrolment fee. ' +
+    'Your referrals can be spread across <strong>any combination of tracks</strong>.<br><br>' +
+    'WhatsApp us once your 5 are confirmed and the discount is applied to your seat instantly. ' +
+    'No codes, no forms — just a quick message and it\'s done.';
+  card.appendChild(body);
+
+  card.appendChild(el('a', {
+    class: 'group-bonus-cta',
+    href: 'https://wa.me/917680973409?text=Hi%20Keshav!%20I%20have%20got%205%20people%20enrolled%20and%20want%20to%20claim%20my%20group%20bonus%20discount.',
+    target: '_blank',
+  }, '💬  Claim Your Group Bonus →'));
+
+  return card;
 }
 
 function buildPlanCard(p) {
