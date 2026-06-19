@@ -615,7 +615,7 @@ var PLANS = [
   {
     id:'track-c', track:'TRACK C', name:'Advanced AI Workflows',
     sub:'Control and Scale AI', dur:'7 Days',
-    orig:3499, price:1800, save:'50% Inaugural Offer', color:'#f59e0b',
+    orig:4999, price:2500, save:'50% Inaugural Offer', color:'#f59e0b',
     feats:[
       'API integrations, keys & unlimited workflows',
       'Advanced automation systems using AI',
@@ -631,7 +631,7 @@ var PLANS = [
   {
     id:'combo', track:'ALL 3 TRACKS', name:'Combo — Get All 3',
     sub:'Unlock everything. Build anything.', dur:'22 Days',
-    orig:13497, price:6099, save:'Over 55% Inaugural Offer', color:'#6366f1', isCombo:true,
+    orig:14997, price:6499, save:'Over 55% Inaugural Offer', color:'#6366f1', isCombo:true,
     feats:[
       'All 3 Tracks — complete access',
       '22 days of structured learning',
